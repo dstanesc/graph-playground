@@ -15,7 +15,8 @@
     "ipld-schema-validator": "^0.1.0",
     "bent": "^7.3.12",
     "ipld-vector": "^1.1.0",
-    "number-to-words": "^1.2.4",
+    "ipld-hashmap": "^2.1.11",
+    "prolly-trees": "^0.0.1",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

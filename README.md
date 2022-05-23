@@ -2,13 +2,15 @@
 
 Early draft looking into graph structures and graph immutable storage options
 
-WIP
+_WIP_
 
 ```
 npm install
 npm start
 npm run clean
 ```
+
+
 
 ## Useful Links
 

@@ -1,40 +1,14 @@
+//import * as codec from '@ipld/dag-cbor'
+//import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import { create, createFrom, load } from 'ipld-vector'
-
-const storage = () => {
-    const blocks = {}
-    const put = (cid, block) => {
-        if (blocks[cid.toString()]) {
-            console.log(`Block exists ${cid.toString}`);
-        } else
-            blocks[cid.toString()] = block
-    }
-    const get = cid => {
-        const block = blocks[cid.toString()]
-        if (!block) throw new Error('Not found')
-        return block
-    }
-    const diff = otherStorage => {
-        const added = []
-        const reused = []
-        for (const key of Object.keys(blocks)) {
-            if (otherStorage.blocks[key]) {
-                reused.push(key)
-            } else {
-                added.push(key)
-            }
-        }
-        return { added, reused }
-    }
-
-    return { get, put, blocks, diff }
-}
+import { blockStorage } from './block-storage.js'
 
 const vectorStorage = async () => {
 
-    let nodeStore = storage()
-    let rlshpStore = storage()
-    let nodeVector = await create(nodeStore, { width: 3 })
-    let rlshpVector = await create(rlshpStore, { width: 3 })
+    let nodeStore = blockStorage()
+    let rlshpStore = blockStorage()
+    let nodeVector = await create(nodeStore, { width: 3, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' })
+    let rlshpVector = await create(rlshpStore, { width: 3, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' })
 
     const showBlocks = async () => {
         let sum = 0
@@ -52,6 +26,18 @@ const vectorStorage = async () => {
         console.log(`Total stored size ${(sum / (1024)).toFixed(2)} KB`);
     }
 
+    const storageCommit = async (nodes, rlshps) => {
+        console.log('Committing to vector')
+        for (const node of nodes) {
+            //console.log(`Committing node ${node.toString()}`)
+            await nodeVector.push(node.toJson())
+        }
+        for (const rlshp of rlshps) {
+            //console.log(`Committing rlshp ${rlshp.toString()}`)
+            await rlshpVector.push(rlshp.toJson())
+        }
+    }
+
     const diff = otherStorage => {
         const diffNodes = nodeStore.diff(otherStorage.nodeStore)
         const diffRlshp = rlshpStore.diff(otherStorage.rlshpStore)
@@ -64,8 +50,8 @@ const vectorStorage = async () => {
         return { nodeVector, rlshpVector }
     }
 
-    return { nodeVector, rlshpVector, nodeStore, rlshpStore, showBlocks, diff }
+    return { nodeStore, rlshpStore, storageCommit, showBlocks, diff }
 }
 
 
-export { storage, vectorStorage }
+export { vectorStorage }

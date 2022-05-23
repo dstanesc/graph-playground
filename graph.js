@@ -14,32 +14,23 @@ class Graph {
     }
 
     addNode = node => {
-        console.log(`Adding node ${node.offset} : ${node.label}`)
+        //console.log(`Adding node ${node.offset} : ${node.label}`)
         this.nodes.push(node)
         return this
     }
 
     addRlshp = rlshp => {
-        console.log(`Adding rlshp ${rlshp.offset} : ${rlshp.firstNode}=>${rlshp.secondNode}`)
+        //console.log(`Adding rlshp ${rlshp.offset} : ${rlshp.firstNode}=>${rlshp.secondNode}`)
         this.rlshps.push(rlshp)
         return this
     }
 
-    commit = async ({ nodeVector, rlshpVector }) => {
-        console.log('Committing')
-        for (const node of this.nodes) {
-            console.log(`Committing node ${node.toString()}`)
-            await nodeVector.push(node.toJson())
-        }
-        for (const rlshp of this.rlshps) {
-            console.log(`Committing rlshp ${rlshp.toString()}`)
-            await rlshpVector.push(rlshp.toJson())
-        }
-        return { nodeVector, rlshpVector }
+    commit = async ({ storageCommit }) => {
+        await storageCommit(this.nodes, this.rlshps)
     }
 
     getRoot = () => {
-         return Node.fromJson(this, this.nodes[0])
+        return Node.fromJson(this, this.nodes[0])
     }
 }
 
@@ -53,20 +44,24 @@ class Rlshp {
         this.firstNextRel = firstNextRel
     }
     toJson() {
-        return {
+        const json = {
             offset: this.offset,
             firstNode: this.firstNode,
             secondNode: this.secondNode,
-            firstPrevRel: this.firstPrevRel,
-            firstNextRel: this.firstNextRel
         }
+        if (this.firstPrevRel !== undefined)
+            json.firstPrevRel = this.firstPrevRel
+        if (this.firstNextRel !== undefined)
+            json.firstNextRel = this.firstNextRel
+
+        return json
     }
 
-    * getRlshps(){
+    * getRlshps() {
         if (this.firstNextRel !== undefined) {
             const firstRlshp = Rlshp.fromJson(this.graph, this.graph.rlshps[this.firstNextRel])
             yield firstRlshp
-            yield * firstRlshp.getRlshps()
+            yield* firstRlshp.getRlshps()
         }
     }
 
@@ -105,7 +100,7 @@ class Node {
         if (this.nextRlshp !== undefined) {
             const firstRlshp = Rlshp.fromJson(this.graph, this.graph.rlshps[this.nextRlshp])
             yield firstRlshp
-            yield * firstRlshp.getRlshps()
+            yield* firstRlshp.getRlshps()
         }
     }
 
@@ -115,11 +110,14 @@ class Node {
     }
 
     toJson() {
-        return {
+        const json = {
             offset: this.offset,
             label: this.label,
-            nextRlshp: this.nextRlshp
         }
+        if (this.nextRlshp !== undefined)
+            json.nextRlshp = this.nextRlshp
+
+        return json
     }
 
     static fromJson(graph, json) {
