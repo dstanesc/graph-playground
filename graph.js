@@ -57,6 +57,14 @@ class Rlshp {
         return json
     }
 
+    addRlshp(rlshp) {
+        if (this.firstNextRel === undefined) {
+            this.firstNextRel = rlshp.offset
+            rlshp.firstPrevRel = this.firstNextRel
+        } else
+            this.graph.rlshps[this.firstNextRel].addRlshp(rlshp)
+    }
+
     * getRlshps() {
         if (this.firstNextRel !== undefined) {
             const firstRlshp = Rlshp.fromJson(this.graph, this.graph.rlshps[this.firstNextRel])
@@ -86,12 +94,10 @@ class Node {
 
     addRlshp(node) {
         const rlshp = new Rlshp(this.graph, this.graph.rlshpOffsetSeq++, this.offset, node.offset)
-        if (this.nextRlshp !== undefined) {
-            this.graph.rlshps[this.nextRlshp].firstNextRel = rlshp.offset
-            rlshp.firstPrevRel = this.nextRlshp
-        } else {
+        if (this.nextRlshp !== undefined)
+            this.graph.rlshps[this.nextRlshp].addRlshp(rlshp)
+        else
             this.nextRlshp = rlshp.offset
-        }
         this.graph.addRlshp(rlshp)
         return rlshp
     }
