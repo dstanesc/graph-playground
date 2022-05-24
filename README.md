@@ -22,15 +22,15 @@ For instance if data stores are vectors of data, references are offsets in the t
 
 Node structure
 ```js
-[{offset, label, nextRlshp}, {offset, label, nextRlshp}, {offset, label, nextRlshp}, ...]
+{offset, label, nextRlshp}
 ```
 Rlshp structure
 ```js
-[{offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp}, {offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp}, {offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp}, ...]
+{offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp, secondNodePrevRlshp, secondNodeNextRlshp}
 ```
 Prop structure
 ```js
-[{offset, propName, propValue, nextProp}, {offset, propName, propValue, nextProp}, {offset, propName, propValue, nextProp}, ...]
+{offset, propName, propValue, nextProp}
 ```
 ## Storage
 
