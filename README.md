@@ -8,19 +8,30 @@ Graph structure inspired by the Neo4j' index-free adjacency, that is each node a
 
 Three distinct stores of data: nodes, relationships, properties.
 
+## Run
+
+```
+npm install
+npm start
+npm run clean
+```
+
 ## Data Structures
 
-For instance if stores are vectors of data, references are offsets in the target vector
+For instance if data stores are vectors of data, references are offsets in the target vector:
 
 Node structure
 ```js
-{ offset, label, nextRlshp}
+[{offset, label, nextRlshp}, {offset, label, nextRlshp}, {offset, label, nextRlshp}, ...]
 ```
 Rlshp structure
 ```js
-{ offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp }
+[{offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp}, {offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp}, {offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp}, ...]
 ```
-
+Prop structure
+```js
+[{offset, propName, propValue, nextProp}, {offset, propName, propValue, nextProp}, {offset, propName, propValue, nextProp}, ...]
+```
 ## Storage
 
 Effectively immutable content addressable set of blocks. The goal is to minimize the I/O associated w/ graph updates (eg. append/upload few blocks only) and graph traversal (eg. load/download few blocks only). 

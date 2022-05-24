@@ -2,6 +2,7 @@ import bent from 'bent'
 import { Graph, GraphInspector } from './graph.js'
 import nobel  from './nobel.js'
 
+//https://api.nobelprize.org/v1/prize.json
 const createLargerGraph = () => {
     const g1 = new Graph()
     const root = g1.createNode("root")
@@ -30,7 +31,7 @@ const createLargerGraph = () => {
         if (prize.laureates !== undefined) {
             for (const l of prize.laureates) {
                 const laureate = g1.createNode(l.id)
-                laureate.addProp('firstname', l.firstname).addProp('surname', l.surname)
+                laureate.addProp('firstname', l.firstname).addProp('surname', l.surname).addProp('motivation', l.motivation)
                 laureates.addRlshp(laureate)
             }
         }

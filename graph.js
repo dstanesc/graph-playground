@@ -3,37 +3,45 @@ class Graph {
     constructor() {
         this.nodes = []
         this.rlshps = []
+        this.props = []
         this.rlshpOffsetSeq = 0
         this.nodeOffsetSeq = 0
+        this.propOffsetSeq = 0
     }
 
-    createNode = label => {
+    createNode(label) {
         const node = new Node(this, this.nodeOffsetSeq++, label)
         this.addNode(node)
         return node
     }
 
-    addNode = node => {
+    addNode(node) {
         //console.log(`Adding node ${node.offset} : ${node.label}`)
         this.nodes.push(node)
         return this
     }
 
-    addRlshp = rlshp => {
+    addRlshp(rlshp) {
         //console.log(`Adding rlshp ${rlshp.offset} : ${rlshp.firstNode}=>${rlshp.secondNode}`)
         this.rlshps.push(rlshp)
         return this
     }
 
-    commit = async ({ storageCommit }) => {
-        await storageCommit(this.nodes, this.rlshps)
+    addProp(prop) {
+        //console.log(`Adding prop ${prop.offset} : ${prop.key}:${prop.value}`)
+        this.props.push(prop)
+        return this
     }
 
-    getRoot = () => {
+    async commit({ storageCommit }) {
+        await storageCommit(this.nodes, this.rlshps, this.props)
+    }
+
+    getRoot() {
         return this.getNode(0)
     }
 
-    getNode = index => {
+    getNode(index) {
         return Node.fromJson(this, this.nodes[index])
     }
 }
@@ -88,12 +96,12 @@ class Rlshp {
 
 class Node {
 
-    constructor(graph, offset, label, nextRlshp) {
+    constructor(graph, offset, label, nextRlshp, nextProp) {
         this.graph = graph
         this.offset = offset
         this.label = label
-        this.props = {}
         this.nextRlshp = nextRlshp
+        this.nextProp = nextProp
     }
 
     addRlshp(node) {
@@ -114,8 +122,15 @@ class Node {
         }
     }
 
-    addProp = (propName, propValue) => {
-        this.props[propName] = propValue
+    addProp(propName, propValue) {
+        if (propName !== undefined && propValue !== undefined) {
+            const prop = new Prop(this.graph, this.graph.propOffsetSeq++, propName, propValue)
+            if (this.nextProp !== undefined)
+                this.graph.props[this.nextProp].addProp(prop)
+            else
+                this.nextProp = prop.offset
+            this.graph.addProp(prop)
+        }
         return this
     }
 
@@ -132,6 +147,44 @@ class Node {
 
     static fromJson(graph, json) {
         return new Node(graph, json.offset, json.label, json.nextRlshp)
+    }
+
+    toString() {
+        return `Node ${this.offset}: ${this.label} nextRlshp ${this.nextRlshp}`;
+    }
+}
+
+class Prop {
+    constructor(graph, offset, key, value, nextProp) {
+        this.graph = graph
+        this.offset = offset
+        this.key = key
+        this.value = value
+        this.nextProp = nextProp
+    }
+
+    addProp(prop) {
+        if (this.nextProp === undefined)
+            this.nextProp = prop.offset
+        else
+            this.graph.props[this.nextProp].addProp(prop)
+        return this
+    }
+
+    toJson() {
+        const json = {
+            offset: this.offset,
+            key: this.key,
+            value: this.value,
+        }
+        if (this.nextProp !== undefined)
+            json.nextProp = this.nextProp
+
+        return json
+    }
+
+    static fromJson(graph, json) {
+        return new Prop(graph, json.offset, json.key, json.value, json.nextProp)
     }
 
     toString() {

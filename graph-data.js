@@ -52,8 +52,8 @@ const createGraph = () => {
 
 const updateGraph = (g1) => {
     const k10 = g1.createNode("literature")
-    const k11 = g1.createNode("993").addProp('firstname', 'Louise').addProp('surname', 'Glück')
-    //   const r20 = k1.addRlshp(k10)
+    const k11 = g1.createNode("993")
+    k11.addProp('firstname', 'Louise').addProp('surname', 'Glück')
     const r20 = g1.nodes[11].addRlshp(k10)
     const r21 = k10.addRlshp(k11)
     return g1

@@ -14,12 +14,11 @@ const opts = { cache, chunker, codec, hasher }
 const prollyStorage = () => {
     let nodeStore = blockStorage()
     let rlshpStore = blockStorage()
+    let propStore = blockStorage()
     let nodesRoot
     let rlshpsRoot
+    let propsRoot
     const nodesCommit = async (nodes) => {
-        // for (const node of nodes) {
-        //     console.log(`Committing node ${node.toString()}`)
-        // }
         const list = nodes.map((elem, index) => ({ key: index.toString(), value: elem.toJson() }))
         const get = nodeStore.get
         for await (const node of create({ get, compare, list, ...opts })) {
@@ -32,9 +31,6 @@ const prollyStorage = () => {
     }
 
     const rlshpsCommit = async (rlshps) => {
-        // for (const rlshp of rlshps) {
-        //     console.log(`Committing rlshp ${rlshp.toString()}`)
-        // }
         const list = rlshps.map((elem, index) => ({ key: index.toString(), value: elem.toJson() }))
         const get = rlshpStore.get
         for await (const node of create({ get, compare, list, ...opts })) {
@@ -46,10 +42,23 @@ const prollyStorage = () => {
         }
     }
 
-    const storageCommit = async (nodes, rlshps) => {
+    const propsCommit = async (props) => {
+        const list = props.map((elem, index) => ({ key: index.toString(), value: elem.toJson() }))
+        const get = propStore.get
+        for await (const node of create({ get, compare, list, ...opts })) {
+            const address = await node.address
+            const block = await node.block
+            const cid = block.cid
+            await propStore.put(cid, block)
+            propsRoot = node
+        }
+    }
+
+    const storageCommit = async (nodes, rlshps, props) => {
         console.log('Committing to prolly')
         await nodesCommit(nodes)
         await rlshpsCommit(rlshps)
+        await propsCommit(props)
     }
 
     const showBlocks = async () => {
@@ -65,16 +74,23 @@ const prollyStorage = () => {
             sum += block.bytes.length
             console.log(`Rlshp block: ${cid.toString()} ${block.bytes.length} bytes`);
         }
+        console.log('---')
+        for await (const cid of Object.keys(propStore.blocks)) {
+            const block = propStore.blocks[cid];
+            sum += block.bytes.length
+            console.log(`Prop block: ${cid.toString()} ${block.bytes.length} bytes`);
+        }
         console.log(`Total stored size ${(sum / (1024)).toFixed(2)} KB`);
     }
 
     const diff = otherStorage => {
         const diffNodes = nodeStore.diff(otherStorage.nodeStore)
         const diffRlshp = rlshpStore.diff(otherStorage.rlshpStore)
-        return { diffNodes, diffRlshp }
+        const diffProps = propStore.diff(otherStorage.propStore)
+        return { diffNodes, diffRlshp, diffProps }
     }
 
-    return { nodeStore, rlshpStore, storageCommit, showBlocks, diff }
+    return { nodeStore, rlshpStore, propStore, storageCommit, showBlocks, diff }
 }
 
 export { prollyStorage }
