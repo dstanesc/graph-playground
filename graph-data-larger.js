@@ -1,13 +1,13 @@
 import bent from 'bent'
 import { Graph, GraphInspector } from './graph.js'
-import json  from './prize.js'
+import nobel  from './nobel.js'
 
 const createLargerGraph = () => {
     const g1 = new Graph()
     const root = g1.createNode("root")
     const years = new Map()
     const yearCategories = new Map()
-    for (const prize of json.prizes) {
+    for (const prize of nobel.prizes) {
         //console.log(`${prize.year}:${prize.category}`)
         let year
         if (years.has(prize.year)) {

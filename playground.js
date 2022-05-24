@@ -2,8 +2,8 @@ import { Graph, GraphInspector } from './graph.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
-import { createGraph, updateGraph } from './data.js'
-import { createLargerGraph, updateLargerGraph} from './data-larger.js'
+import { createGraph, updateGraph } from './graph-data.js'
+import { createLargerGraph, updateLargerGraph} from './graph-data-larger.js'
 
 const graphToVector = async () => {
     const g1 = createGraph()
@@ -11,6 +11,19 @@ const graphToVector = async () => {
     await g1.commit(s1)
     //await s1.showBlocks()
     updateGraph(g1)
+    const s2 = await vectorStorage()
+    await g1.commit(s2)
+    //await s2.showBlocks()
+    const { diffNodes, diffRlshp } = s2.diff(s1)
+    return { diffNodes, diffRlshp }
+}
+
+const largerGraphToVector = async () => {
+    const g1 = createLargerGraph()
+    const s1 = await vectorStorage()
+    await g1.commit(s1)
+    //await s1.showBlocks()
+    updateLargerGraph(g1)
     const s2 = await vectorStorage()
     await g1.commit(s2)
     //await s2.showBlocks()
@@ -35,7 +48,7 @@ const largerGraphToProlly = async () => {
     const g1 = createLargerGraph()
     const s1 = await prollyStorage()
     await g1.commit(s1)
-    await s1.showBlocks()
+    //await s1.showBlocks()
     updateLargerGraph(g1)
     const s2 = await prollyStorage()
     await g1.commit(s2)
@@ -61,10 +74,11 @@ const largerGraphToHamt = async () => {
     const g1 = createLargerGraph()
     const s1 = await hamtStorage()
     await g1.commit(s1)
-    await s1.showBlocks()
+    //await s1.showBlocks()
     updateLargerGraph(g1)
     const s2 = await hamtStorage()
     await g1.commit(s2)
+    //await s2.showBlocks()
     const { diffNodes, diffRlshp } = s2.diff(s1)
     return { diffNodes, diffRlshp }
 }
@@ -75,6 +89,15 @@ const largerGraphToHamt = async () => {
 //     console.log(`Vector rlshp block reuse ${diffRlshp.percent}%`)
 // }
 
+{
+    const start = new Date()
+    const { diffNodes, diffRlshp } = await largerGraphToVector()
+    const end = new Date()
+    console.log(`Duration ${end -start} ms`)
+    console.log(`Larger vector node block reuse ${diffNodes.percent}%`)
+    console.log(`Larger vector rlshp block reuse ${diffRlshp.percent}%`)
+}
+
 // {
 //     const { diffNodes, diffRlshp } = await graphToProlly()
 //     console.log(`Prolly node block reuse ${diffNodes.percent}%`)
@@ -82,7 +105,10 @@ const largerGraphToHamt = async () => {
 // }
 
 {
+    const start = new Date()
     const { diffNodes, diffRlshp } = await largerGraphToProlly()
+    const end = new Date()
+    console.log(`Duration ${end -start} ms`)
     console.log(`Larger prolly node block reuse ${diffNodes.percent}%`)
     console.log(`Larger prolly rlshp block reuse ${diffRlshp.percent}%`)
 }
@@ -93,8 +119,11 @@ const largerGraphToHamt = async () => {
 //     console.log(`HAMT rlshp block reuse ${diffRlshp.percent}%`)
 // }
 
-// {
-//     const { diffNodes, diffRlshp } = await largerGraphToHamt()
-//     console.log(`Larger HAMT node block reuse ${diffNodes.percent}%`)
-//     console.log(`Larger HAMT rlshp block reuse ${diffRlshp.percent}%`)
-// }
+{
+    const start = new Date()
+    const { diffNodes, diffRlshp } = await largerGraphToHamt()
+    const end = new Date()
+    console.log(`Duration ${end -start} ms`)
+    console.log(`Larger HAMT node block reuse ${diffNodes.percent}%`)
+    console.log(`Larger HAMT rlshp block reuse ${diffRlshp.percent}%`)
+}
