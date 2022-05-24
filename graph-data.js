@@ -1,20 +1,20 @@
-import {Graph} from './graph.js'
+import {GraphWriter} from './graph.js'
 
 const createGraph = () => {
 
-    const g1 = new Graph()
+    const gw = new GraphWriter()
 
-    const r = g1.createNode("root")
-    const n1 = g1.createNode("2021")
-    const n2 = g1.createNode("chemistry")
-    const n3 = g1.createNode("economics")
-    const n4 = g1.createNode("laureates")
-    const n5 = g1.createNode("laureates")
-    const n6 = g1.createNode("1002").addProp('firstname', 'Benjamin').addProp('surname', 'List')
-    const n7 = g1.createNode("1003").addProp('firstname', 'David').addProp('surname', 'MacMillan')
-    const n8 = g1.createNode("1007").addProp('firstname', 'David').addProp('surname', 'Card')
-    const n9 = g1.createNode("1008").addProp('firstname', 'Joshua').addProp('surname', 'Angrist')
-    const n10 = g1.createNode("1009").addProp('firstname', 'Guido').addProp('surname', 'Imbens')
+    const r = gw.addNode("root")
+    const n1 = gw.addNode("2021")
+    const n2 = gw.addNode("chemistry")
+    const n3 = gw.addNode("economics")
+    const n4 = gw.addNode("laureates")
+    const n5 = gw.addNode("laureates")
+    const n6 = gw.addNode("1002").addProp('firstname', 'Benjamin').addProp('surname', 'List')
+    const n7 = gw.addNode("1003").addProp('firstname', 'David').addProp('surname', 'MacMillan')
+    const n8 = gw.addNode("1007").addProp('firstname', 'David').addProp('surname', 'Card')
+    const n9 = gw.addNode("1008").addProp('firstname', 'Joshua').addProp('surname', 'Angrist')
+    const n10 = gw.addNode("1009").addProp('firstname', 'Guido').addProp('surname', 'Imbens')
 
     const r1 = r.addRlshp(n1)
     const r2 = n1.addRlshp(n2)
@@ -27,15 +27,15 @@ const createGraph = () => {
     const r9 = n5.addRlshp(n9)
     const r10 = n5.addRlshp(n10)
 
-    const k1 = g1.createNode("2020")
-    const k2 = g1.createNode("chemistry")
-    const k3 = g1.createNode("economics")
-    const k4 = g1.createNode("laureates")
-    const k5 = g1.createNode("laureates")
-    const k6 = g1.createNode("991").addProp('firstname', 'Emmanuelle').addProp('surname', 'Charpentier')
-    const k7 = g1.createNode("992").addProp('firstname', 'Jennifer').addProp('surname', 'Doudna')
-    const k8 = g1.createNode("995").addProp('firstname', 'Paul').addProp('surname', 'Milgrom')
-    const k9 = g1.createNode("996").addProp('firstname', 'Robert').addProp('surname', 'Wilson')
+    const k1 = gw.addNode("2020")
+    const k2 = gw.addNode("chemistry")
+    const k3 = gw.addNode("economics")
+    const k4 = gw.addNode("laureates")
+    const k5 = gw.addNode("laureates")
+    const k6 = gw.addNode("991").addProp('firstname', 'Emmanuelle').addProp('surname', 'Charpentier')
+    const k7 = gw.addNode("992").addProp('firstname', 'Jennifer').addProp('surname', 'Doudna')
+    const k8 = gw.addNode("995").addProp('firstname', 'Paul').addProp('surname', 'Milgrom')
+    const k9 = gw.addNode("996").addProp('firstname', 'Robert').addProp('surname', 'Wilson')
 
     const r11 = r.addRlshp(k1)
     const r12 = k1.addRlshp(k2)
@@ -47,16 +47,16 @@ const createGraph = () => {
     const r18 = k5.addRlshp(k8)
     const r19 = k5.addRlshp(k9)
 
-    return g1
+    return gw
 }
 
-const updateGraph = (g1) => {
-    const k10 = g1.createNode("literature")
-    const k11 = g1.createNode("993")
+const updateGraph = (gw) => {
+    const k10 = gw.addNode("literature")
+    const k11 = gw.addNode("993")
     k11.addProp('firstname', 'Louise').addProp('surname', 'Glück')
-    const r20 = g1.nodes[11].addRlshp(k10)
+    const r20 = gw.nodes[11].addRlshp(k10)
     const r21 = k10.addRlshp(k11)
-    return g1
+    return gw
 }
 
 export { createGraph, updateGraph } 

@@ -1,5 +1,6 @@
 
-class Graph {
+class GraphWriter {
+
     constructor() {
         this.nodes = []
         this.rlshps = []
@@ -9,16 +10,11 @@ class Graph {
         this.propOffsetSeq = 0
     }
 
-    createNode(label) {
+    addNode(label) {
         const node = new Node(this, this.nodeOffsetSeq++, label)
-        this.addNode(node)
-        return node
-    }
-
-    addNode(node) {
-        //console.log(`Adding node ${node.offset} : ${node.label}`)
+         //console.log(`Adding node ${node.offset} : ${node.label}`)
         this.nodes.push(node)
-        return this
+        return node
     }
 
     addRlshp(rlshp) {
@@ -263,4 +259,4 @@ const debugVisitor = () => {
     return { startNode, endNode, nodeNext, startRlshp, endRlshp, rlshpNext }
 }
 
-export { Graph, GraphInspector }
+export { GraphWriter, GraphInspector }
