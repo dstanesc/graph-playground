@@ -30,7 +30,11 @@ class Graph {
     }
 
     getRoot = () => {
-        return Node.fromJson(this, this.nodes[0])
+        return this.getNode(0)
+    }
+
+    getNode = index => {
+        return Node.fromJson(this, this.nodes[index])
     }
 }
 
