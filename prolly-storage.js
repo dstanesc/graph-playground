@@ -5,7 +5,7 @@ import { bf, simpleCompare as compare } from 'prolly-trees/utils'
 import { nocache } from 'prolly-trees/cache'
 import { blockStorage } from './block-storage.js'
 
-const chunker = bf(3)
+const chunker = bf(8)
 
 const cache = nocache
 
@@ -85,6 +85,7 @@ const prollyStorage = () => {
         return blocks
     }
 
+    //FIXME log changes before distributed commit
     const storageCommit = async (nodes, rlshps, props) => {
         let nodeBlocks
         let rlshpBlocks
@@ -158,17 +159,22 @@ const prollyStorage = () => {
             const cid = block.cid
             sum += block.bytes.length
         }
-        console.log('---')
         for (const block of await rlshpBlocks) {
             const cid = block.cid;
             sum += block.bytes.length
         }
-        console.log('---')
         for (const block of await propBlocks) {
             const cid = block.cid;
             sum += block.bytes.length
         }
         return sum;
+    }
+
+    const count = async ({ nodeBlocks, rlshpBlocks, propBlocks }) => {
+        let c = (await nodeBlocks).length
+        c += (await rlshpBlocks).length
+        c += (await propBlocks).length
+        return c
     }
 
     const percent = async ({ nodeBlocks, rlshpBlocks, propBlocks }) => {
@@ -178,7 +184,7 @@ const prollyStorage = () => {
         return { percentNodes, percentRlshp, percentProps }
     }
 
-    return { nodeStore, rlshpStore, propStore, storageCommit, showBlocks, showStoredBlocks, size, percent }
+    return { nodeStore, rlshpStore, propStore, storageCommit, showBlocks, showStoredBlocks, size, count, percent }
 }
 
 export { prollyStorage }

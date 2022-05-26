@@ -59,7 +59,7 @@ class GraphWriter {
 
     async commit({ storageCommit }) {
 
-        const { nodeBlocks, rlshpBlocks, propBlocks, update } = await storageCommit(this.nodes, this.rlshps, this.props)
+        const commitResult = await storageCommit(this.nodes, this.rlshps, this.props)
 
         this.graph.nodes.push(...this.nodes)
         this.graph.rlshps.push(...this.rlshps)
@@ -71,7 +71,7 @@ class GraphWriter {
         this.rlshps = []
         this.props = []
 
-        return { nodeBlocks, rlshpBlocks, propBlocks, update }
+        return commitResult
     }
 
     getRlshp(offset) {
