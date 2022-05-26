@@ -5,7 +5,7 @@ import { bf, simpleCompare as compare } from 'prolly-trees/utils'
 import { nocache } from 'prolly-trees/cache'
 import { blockStorage } from './block-storage.js'
 
-const chunker = bf(8)
+const chunker = bf(3)
 
 const cache = nocache
 

@@ -3,17 +3,26 @@
 import { create, createFrom, load } from 'ipld-vector'
 import { blockStorage } from './block-storage.js'
 
+const opts = { width: 4, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' }
+
+class Block {
+    constructor(cid, bytes) {
+        this.cid = cid
+        this.bytes = bytes
+    }
+}
+
 const vectorStorage = async () => {
 
     let nodeStore = blockStorage()
     let rlshpStore = blockStorage()
     let propStore = blockStorage()
 
-    let nodeVector = await create(nodeStore, { width: 3, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' })
-    let rlshpVector = await create(rlshpStore, { width: 3, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' })
-    let propVector = await create(propStore, { width: 3, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' })
+    let nodesRoot
+    let rlshpsRoot
+    let propsRoot
 
-    const showBlocks = async () => {
+    const showStoredBlocks = async () => {
         let sum = 0
         for await (const cid of nodeVector.cids()) {
             const block = nodeStore.get(cid);
@@ -36,29 +45,125 @@ const vectorStorage = async () => {
     }
 
     const storageCommit = async (nodes, rlshps, props) => {
-        console.log('Committing to vector')
+
+
+        const update = nodesRoot !== undefined
+
+        let nodeVector
+        let rlshpVector
+        let propVector
+
+        if (update) {
+            nodeVector = await load(nodeStore, nodesRoot, opts)
+            rlshpVector = await load(rlshpStore, rlshpsRoot, opts)
+            propVector = await load(propStore, propsRoot, opts)
+        } else {
+            nodeVector = await create(nodeStore, opts)
+            rlshpVector = await create(rlshpStore, opts)
+            propVector = await create(propStore, opts)
+        }
+
         for (const node of nodes) {
-            //console.log(`Committing node ${node.toString()}`)
             await nodeVector.push(node.toJson())
         }
         for (const rlshp of rlshps) {
-            //console.log(`Committing rlshp ${rlshp.toString()}`)
             await rlshpVector.push(rlshp.toJson())
         }
         for (const prop of props) {
-            //console.log(`Committing rlshp ${rlshp.toString()}`)
             await propVector.push(prop.toJson())
         }
+
+        nodesRoot = nodeVector.cid
+        rlshpsRoot = rlshpVector.cid
+        propsRoot = propVector.cid
+
+        return roots()
     }
 
-    const diff = otherStorage => {
-        const diffNodes = nodeStore.diff(otherStorage.nodeStore)
-        const diffRlshp = rlshpStore.diff(otherStorage.rlshpStore)
-        const diffProps = propStore.diff(otherStorage.propStore)
-        return { diffNodes, diffRlshp, diffProps }
+    const roots = () => {
+        return { nodesRoot, rlshpsRoot, propsRoot }
     }
 
-    return { nodeStore, rlshpStore, propStore, storageCommit, showBlocks, diff }
+
+    const blocks = async ({ nodesRoot, rlshpsRoot, propsRoot }) => {
+
+        const nodeVector = await load(nodeStore, nodesRoot, opts)
+        const rlshpVector = await load(rlshpStore, rlshpsRoot, opts)
+        const propVector = await load(propStore, propsRoot, opts)
+
+        let nodeBlocks = []
+        let rlshpBlocks = []
+        let propBlocks = []
+
+        for await (const cid of nodeVector.cids()) {
+            nodeBlocks.push(new Block(cid, await nodeStore.get(cid)))
+        }
+
+        for await (const cid of rlshpVector.cids()) {
+            rlshpBlocks.push(new Block(cid, await rlshpStore.get(cid)))
+        }
+
+        for await (const cid of propVector.cids()) {
+            propBlocks.push(new Block(cid, await propStore.get(cid)))
+        }
+
+        return { nodeBlocks, rlshpBlocks, propBlocks }
+    }
+
+
+    const showBlocks = async ({ nodesRoot, rlshpsRoot, propsRoot }) => {
+
+        const { nodeBlocks, rlshpBlocks, propBlocks } = await blocks({ nodesRoot, rlshpsRoot, propsRoot })
+
+        console.log('---')
+        let sum = 0
+        for (const block of await nodeBlocks) {
+            const cid = block.cid
+            sum += block.bytes.length
+            console.log(`Nodes block: ${cid.toString()} ${block.bytes.length} bytes`);
+        }
+        console.log('---')
+        for (const block of await rlshpBlocks) {
+            const cid = block.cid;
+            sum += block.bytes.length
+            console.log(`Rlshp block: ${cid.toString()} ${block.bytes.length} bytes`);
+        }
+        console.log('---')
+        for (const block of await propBlocks) {
+            const cid = block.cid;
+            sum += block.bytes.length
+            console.log(`Prop block: ${cid.toString()} ${block.bytes.length} bytes`);
+        }
+        console.log('---')
+        console.log(`Total stored size ${(sum / (1024)).toFixed(2)} KB`);
+    }
+
+    const size = async ({ nodesRoot, rlshpsRoot, propsRoot }) => {
+
+        const { nodeBlocks, rlshpBlocks, propBlocks } = await blocks({ nodesRoot, rlshpsRoot, propsRoot })
+
+        let sum = 0
+        for (const block of await nodeBlocks) {
+            sum += block.bytes.length
+        }
+        for (const block of await rlshpBlocks) {
+            sum += block.bytes.length
+        }
+        for (const block of await propBlocks) {
+            sum += block.bytes.length
+        }
+        return sum
+    }
+
+    const count = async ({ nodesRoot, rlshpsRoot, propsRoot }) => {
+        const { nodeBlocks, rlshpBlocks, propBlocks } = await blocks({ nodesRoot, rlshpsRoot, propsRoot })
+        let c = (await nodeBlocks).length
+        c += (await rlshpBlocks).length
+        c += (await propBlocks).length
+        return c
+    }
+
+    return { nodeStore, rlshpStore, propStore, storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks }
 }
 
 

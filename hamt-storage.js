@@ -15,6 +15,7 @@ class Block {
         this.bytes = bytes
     }
 }
+
 const hamtStorage = async () => {
 
     let nodeStore = blockStorage()
