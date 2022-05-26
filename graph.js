@@ -1,18 +1,46 @@
-
-class GraphWriter {
+class Graph {
 
     constructor() {
         this.nodes = []
         this.rlshps = []
         this.props = []
-        this.rlshpOffsetSeq = 0
-        this.nodeOffsetSeq = 0
-        this.propOffsetSeq = 0
+        this.nodeOffset = 0
+        this.rlshpOffset = 0
+        this.propOffset = 0
+    }
+
+    writer() {
+        return new GraphWriter(this, this.nodeOffset, this.rlshpOffset, this.propOffset)
+    }
+
+    getRoot() {
+        return this.getNode(0)
+    }
+
+    getNode(index) {
+        return Node.fromJson(this.nodes[index])
+    }
+}
+
+
+class GraphWriter {
+
+    constructor(graph, nodeOffset, rlshpOffset, propOffset) {
+        this.graph = graph
+        this.nodes = []
+        this.rlshps = []
+        this.props = []
+        this.nodeOffset = nodeOffset
+        this.rlshpOffset = rlshpOffset
+        this.propOffset = propOffset
+        this.initNodeOffset = nodeOffset
+        this.initRlshpOffset = rlshpOffset
+        this.initPropOffset = propOffset
     }
 
     addNode(label) {
-        const node = new Node(this, this.nodeOffsetSeq++, label)
-         //console.log(`Adding node ${node.offset} : ${node.label}`)
+        const node = new Node(this.nodeOffset++, label)
+        //console.log(`Adding node ${node.offset} : ${node.label}`)
         this.nodes.push(node)
         return node
     }
@@ -30,27 +58,50 @@ class GraphWriter {
     }
 
     async commit({ storageCommit }) {
-        await storageCommit(this.nodes, this.rlshps, this.props)
+
+        const { nodeBlocks, rlshpBlocks, propBlocks, update } = await storageCommit(this.nodes, this.rlshps, this.props)
+
+        this.graph.nodes.push(...this.nodes)
+        this.graph.rlshps.push(...this.rlshps)
+        this.graph.props.push(...this.props)
+        this.graph.nodeOffset = this.nodeOffset
+        this.graph.rlshpOffset = this.rlshpOffset
+        this.graph.propOffset = this.propOffset
+        this.nodes = []
+        this.rlshps = []
+        this.props = []
+
+        return { nodeBlocks, rlshpBlocks, propBlocks, update }
     }
 
-    getRoot() {
-        return this.getNode(0)
+    getRlshp(offset) {
+        let rlshp
+        if (offset >= this.initRlshpOffset)
+            rlshp = this.rlshps[offset - this.initRlshpOffset]
+        else
+            rlshp = this.graph.rlshps[offset]
+        return rlshp
     }
 
-    getNode(index) {
-        return Node.fromJson(this, this.nodes[index])
+    getProp(offset) {
+        let prop
+        if (offset >= this.initPropOffset)
+            prop = this.props[offset - this.initPropOffset]
+        else
+            prop = this.graph.props[offset]
+        return prop
     }
 }
 
 class Rlshp {
-    constructor(graph, offset, firstNode, secondNode, firstPrevRel, firstNextRel) {
-        this.graph = graph
+    constructor(offset, firstNode, secondNode, firstPrevRel, firstNextRel) {
         this.offset = offset
         this.firstNode = firstNode
         this.secondNode = secondNode
         this.firstPrevRel = firstPrevRel
         this.firstNextRel = firstNextRel
     }
+
     toJson() {
         const json = {
             offset: this.offset,
@@ -65,24 +116,24 @@ class Rlshp {
         return json
     }
 
-    addRlshp(rlshp) {
+    addRlshp(graphWriter, rlshp) {
         if (this.firstNextRel === undefined) {
             this.firstNextRel = rlshp.offset
             rlshp.firstPrevRel = this.firstNextRel
         } else
-            this.graph.rlshps[this.firstNextRel].addRlshp(rlshp)
+            graphWriter.getRlshp(this.firstNextRel).addRlshp(graphWriter, rlshp)
     }
 
-    * getRlshps() {
+    * getRlshps(graphWriter) {
         if (this.firstNextRel !== undefined) {
-            const firstRlshp = Rlshp.fromJson(this.graph, this.graph.rlshps[this.firstNextRel])
+            const firstRlshp = Rlshp.fromJson(graphWriter, this.graphWriter.rlshps[this.firstNextRel])
             yield firstRlshp
-            yield* firstRlshp.getRlshps()
+            yield* firstRlshp.getRlshps(graphWriter)
         }
     }
 
-    static fromJson(graph, json) {
-        return new Rlshp(graph, json.offset, json.firstNode, json.secondNode, json.firstPrevRel, json.firstNextRel)
+    static fromJson(json) {
+        return new Rlshp(json.offset, json.firstNode, json.secondNode, json.firstPrevRel, json.firstNextRel)
     }
 
     toString() {
@@ -92,40 +143,40 @@ class Rlshp {
 
 class Node {
 
-    constructor(graph, offset, label, nextRlshp, nextProp) {
-        this.graph = graph
+    constructor(offset, label, nextRlshp, nextProp) {
         this.offset = offset
         this.label = label
         this.nextRlshp = nextRlshp
         this.nextProp = nextProp
     }
 
-    addRlshp(node) {
-        const rlshp = new Rlshp(this.graph, this.graph.rlshpOffsetSeq++, this.offset, node.offset)
-        if (this.nextRlshp !== undefined)
-            this.graph.rlshps[this.nextRlshp].addRlshp(rlshp)
-        else
+
+    addRlshp(graphWriter, node) {
+        const rlshp = new Rlshp(graphWriter.rlshpOffset++, this.offset, node.offset)
+        if (this.nextRlshp !== undefined) {
+            graphWriter.getRlshp(this.nextRlshp).addRlshp(graphWriter, rlshp)
+        } else
             this.nextRlshp = rlshp.offset
-        this.graph.addRlshp(rlshp)
+        graphWriter.addRlshp(rlshp)
         return rlshp
     }
 
-    * getRlshps() {
+    * getRlshps(graphWriter) {
         if (this.nextRlshp !== undefined) {
-            const firstRlshp = Rlshp.fromJson(this.graph, this.graph.rlshps[this.nextRlshp])
+            const firstRlshp = Rlshp.fromJson(graphWriter, graphWriter.rlshps[this.nextRlshp])
             yield firstRlshp
             yield* firstRlshp.getRlshps()
         }
     }
 
-    addProp(propName, propValue) {
+    addProp(graphWriter, propName, propValue) {
         if (propName !== undefined && propValue !== undefined) {
-            const prop = new Prop(this.graph, this.graph.propOffsetSeq++, propName, propValue)
+            const prop = new Prop(graphWriter.propOffset++, propName, propValue)
             if (this.nextProp !== undefined)
-                this.graph.props[this.nextProp].addProp(prop)
+                graphWriter.getProp(this.nextProp).addProp(graphWriter, prop)
             else
                 this.nextProp = prop.offset
-            this.graph.addProp(prop)
+            graphWriter.addProp(prop)
         }
         return this
     }
@@ -141,8 +192,8 @@ class Node {
         return json
     }
 
-    static fromJson(graph, json) {
-        return new Node(graph, json.offset, json.label, json.nextRlshp)
+    static fromJson(json) {
+        return new Node(json.offset, json.label, json.nextRlshp)
     }
 
     toString() {
@@ -151,19 +202,18 @@ class Node {
 }
 
 class Prop {
-    constructor(graph, offset, key, value, nextProp) {
-        this.graph = graph
+    constructor(offset, key, value, nextProp) {
         this.offset = offset
         this.key = key
         this.value = value
         this.nextProp = nextProp
     }
 
-    addProp(prop) {
+    addProp(graphWriter, prop) {
         if (this.nextProp === undefined)
             this.nextProp = prop.offset
         else
-            this.graph.props[this.nextProp].addProp(prop)
+            graphWriter.getProp(this.nextProp).addProp(graphWriter, prop)
         return this
     }
 
@@ -179,8 +229,8 @@ class Prop {
         return json
     }
 
-    static fromJson(graph, json) {
-        return new Prop(graph, json.offset, json.key, json.value, json.nextProp)
+    static fromJson(json) {
+        return new Prop(json.offset, json.key, json.value, json.nextProp)
     }
 
     toString() {
@@ -259,4 +309,4 @@ const debugVisitor = () => {
     return { startNode, endNode, nodeNext, startRlshp, endRlshp, rlshpNext }
 }
 
-export { GraphWriter, GraphInspector }
+export { Graph, GraphWriter, GraphInspector }

@@ -1,8 +1,8 @@
-import {GraphWriter} from './graph.js'
+import {Graph, GraphWriter} from './graph.js'
 
 const createGraph = () => {
 
-    const gw = new GraphWriter()
+    const gw = new Graph().writer()
 
     const r = gw.addNode("root")
     const n1 = gw.addNode("2021")

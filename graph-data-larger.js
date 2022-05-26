@@ -1,10 +1,10 @@
 import bent from 'bent'
-import { GraphWriter, GraphInspector } from './graph.js'
-import nobel  from './nobel.js'
+import { Graph, GraphWriter, GraphInspector } from './graph.js'
+import nobel from './nobel.js'
 
 //https://api.nobelprize.org/v1/prize.json
-const createLargerGraph = () => {
-    const gw = new GraphWriter()
+const createLargerGraph = (gw) => {
+
     const root = gw.addNode("root")
     const years = new Map()
     const yearCategories = new Map()
@@ -16,7 +16,7 @@ const createLargerGraph = () => {
         } else {
             year = gw.addNode(prize.year)
             years.set(prize.year, year)
-            root.addRlshp(year)
+            root.addRlshp(gw, year)
         }
         let category
         if (yearCategories.has(prize.year + '_' + prize.category)) {
@@ -24,34 +24,31 @@ const createLargerGraph = () => {
         } else {
             category = gw.addNode(prize.category)
             yearCategories.set(prize.year + '_' + prize.category, category)
-            year.addRlshp(category)
+            year.addRlshp(gw, category)
         }
         const laureates = gw.addNode('laureates')
-        category.addRlshp(laureates)
+        category.addRlshp(gw, laureates)
         if (prize.laureates !== undefined) {
             for (const l of prize.laureates) {
                 const laureate = gw.addNode(l.id)
-                laureate.addProp('firstname', l.firstname).addProp('surname', l.surname).addProp('motivation', l.motivation)
-                laureates.addRlshp(laureate)
+                laureate.addProp(gw, 'firstname', l.firstname).addProp(gw, 'surname', l.surname).addProp(gw, 'motivation', l.motivation)
+                laureates.addRlshp(gw, laureate)
             }
         }
-        root.addRlshp(year)
+        root.addRlshp(gw, year)
     }
-    return gw
 }
 
-const updateLargerGraph = (gw) => {
-    const root = gw.getRoot();
+const updateLargerGraph = (root, gw) => {
     const y2022 = gw.addNode("2022")
     const peace = gw.addNode("peace")
     const laureates = gw.addNode("laureates")
     const laureate = gw.addNode("3030")
-    laureate.addProp('firstname', 'undisclosed').addProp('surname', 'undisclosed')
-    laureates.addRlshp(laureate)
-    peace.addRlshp(laureates)
-    y2022.addRlshp(peace)
-    root.addRlshp(y2022)
-    return gw
+    laureate.addProp(gw, 'firstname', 'undisclosed').addProp(gw, 'surname', 'undisclosed')
+    laureates.addRlshp(gw, laureate)
+    peace.addRlshp(gw, laureates)
+    y2022.addRlshp(gw, peace)
+    root.addRlshp(gw, y2022)
 }
 
 export { createLargerGraph, updateLargerGraph } 
