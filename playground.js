@@ -166,9 +166,9 @@ const graphReaderProlly = async () => {
     console.log(`Insert duration ${end - start} ms`)
 
     //const path = ['2021', 'chemistry', 'laureates']
-    const path = ['2021', 'chemistry', 'laureates']
+    const path = ['1901', 'medicine', 'laureates']
     const reader = new GraphReader(s1)
-    const results = await reader.read(path, 'firstname')
+    const results = await reader.read(path, 'surname')
     for await (const result of results) {
         console.log('---Found---')
         console.log(result)
@@ -176,30 +176,30 @@ const graphReaderProlly = async () => {
 }
 
 
-{
-    await graphToProlly()
-    console.log('---')
-}
+// {
+//     await graphToProlly()
+//     console.log('---')
+// }
 
-{
-    await graphToHamt()
-    console.log('---')
-}
+// {
+//     await graphToHamt()
+//     console.log('---')
+// }
 
-{
-    await largerGraphToProlly()
-    console.log('---')
-}
+// {
+//     await largerGraphToProlly()
+//     console.log('---')
+// }
 
-{
-    await largerGraphToHamt()
-    console.log('---')
-}
+// {
+//     await largerGraphToHamt()
+//     console.log('---')
+// }
 
-{
-    await largerGraphToVector()
-    console.log('---')
-}
+// {
+//     await largerGraphToVector()
+//     console.log('---')
+// }
 
 
 {
