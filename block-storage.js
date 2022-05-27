@@ -10,6 +10,8 @@ const blockStorage = () => {
     const get = async cid => {
         const block = blocks[cid.toString()]
         if (!block) throw new Error('Block Not found for ' + cid.toString())
+        const length = (block.bytes) ? block.bytes.length: block.length
+        console.log(`Loading block ${cid.toString()} ${length} bytes`)
         return block
     }
     const size = () => {

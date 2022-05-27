@@ -22,6 +22,107 @@ class Graph {
     }
 }
 
+class SearchCompleted {
+    constructor() {
+    }
+}
+
+class GraphReader {
+
+    constructor({ nodeGet, rlshpGet, propGet }) {
+        this.nodeGet = nodeGet
+        this.rlshpGet = rlshpGet
+        this.propGet = propGet
+    }
+
+    async getRlshp(offset) {
+        return await this.rlshpGet(offset)
+    }
+
+    async getNode(offset) {
+        return await this.nodeGet(offset)
+    }
+
+    async * read(path, select) {
+        try {
+            const root = await this.nodeGet('0')
+            yield* this.readInternal(root, 0, path, select)
+        } catch (e) {
+            if (e instanceof SearchCompleted) {
+                //ignore
+            } else throw e
+        }
+    }
+
+    async * readInternal(node, index, path, select) {
+        if (index < path.length) {
+            const elem = path[index]
+            const rlshps = await this.getRlshpsNode(node)
+            for await (const rlshp of rlshps) {
+                const childNode = await this.nodeGet(rlshp.secondNode)
+                if (childNode.label === elem) {
+                    if (index === path.length - 1) {
+                        const resultNodes = await this.getNodesNode(childNode)
+                        for await (const resultNode of resultNodes) {
+                            yield* await this.getPropsNode(resultNode, select)
+                        }
+                        throw new SearchCompleted()
+                    } else {
+                        yield* await this.readInternal(childNode, index + 1, path, select)
+                    }
+                }
+            }
+        }
+    }
+
+    async * getPropsNode(node, select) {
+        if (node.nextProp !== undefined) {
+            const propJson = await this.propGet(node.nextProp)
+            const firstProp = Prop.fromJson(propJson)
+            if (firstProp.key === select)
+                yield firstProp
+            else
+                yield* await this.getPropsProp(firstProp, select)
+        }
+    }
+
+    async * getPropsProp(prop, select) {
+        if (prop.nextProp !== undefined) {
+            const propJson = await this.propGet(prop.nextProp)
+            const nextProp = Prop.fromJson(propJson)
+            if (nextProp.key === select)
+                yield nextProp
+            else
+                yield* await this.getPropsProp(nextProp, select)
+        }
+    }
+
+    async * getNodesNode(node) {
+        const rlshps = await this.getRlshpsNode(node)
+        for await (const rlshp of rlshps) {
+            const childNode = await this.nodeGet(rlshp.secondNode)
+            yield childNode
+        }
+    }
+
+    async * getRlshpsNode(node) {
+        if (node.nextRlshp !== undefined) {
+            const rlshpJson = await this.rlshpGet(node.nextRlshp)
+            const firstRlshp = Rlshp.fromJson(rlshpJson)
+            yield firstRlshp
+            yield* await this.getRlshpsRlshp(firstRlshp)
+        }
+    }
+
+    async * getRlshpsRlshp(rlshp) {
+        if (rlshp.firstNextRel !== undefined) {
+            const rlshpJson = await this.rlshpGet(rlshp.firstNextRel)
+            const firstRlshp = Rlshp.fromJson(rlshpJson)
+            yield firstRlshp
+            yield* await this.getRlshpsRlshp(firstRlshp)
+        }
+    }
+}
 
 class GraphWriter {
 
@@ -124,14 +225,6 @@ class Rlshp {
             graphWriter.getRlshp(this.firstNextRel).addRlshp(graphWriter, rlshp)
     }
 
-    * getRlshps(graphWriter) {
-        if (this.firstNextRel !== undefined) {
-            const firstRlshp = Rlshp.fromJson(graphWriter, this.graphWriter.rlshps[this.firstNextRel])
-            yield firstRlshp
-            yield* firstRlshp.getRlshps(graphWriter)
-        }
-    }
-
     static fromJson(json) {
         return new Rlshp(json.offset, json.firstNode, json.secondNode, json.firstPrevRel, json.firstNextRel)
     }
@@ -161,14 +254,6 @@ class Node {
         return rlshp
     }
 
-    * getRlshps(graphWriter) {
-        if (this.nextRlshp !== undefined) {
-            const firstRlshp = Rlshp.fromJson(graphWriter, graphWriter.rlshps[this.nextRlshp])
-            yield firstRlshp
-            yield* firstRlshp.getRlshps()
-        }
-    }
-
     addProp(graphWriter, propName, propValue) {
         if (propName !== undefined && propValue !== undefined) {
             const prop = new Prop(graphWriter.propOffset++, propName, propValue)
@@ -189,15 +274,18 @@ class Node {
         if (this.nextRlshp !== undefined)
             json.nextRlshp = this.nextRlshp
 
+        if (this.nextProp !== undefined)
+            json.nextProp = this.nextProp
+
         return json
     }
 
     static fromJson(json) {
-        return new Node(json.offset, json.label, json.nextRlshp)
+        return new Node(json.offset, json.label, json.nextRlshp, json.nextProp)
     }
 
     toString() {
-        return `Node ${this.offset}: ${this.label} nextRlshp ${this.nextRlshp}`;
+        return `Node ${this.offset}: ${this.label} nextRlshp ${this.nextRlshp} nextProp ${this.nextProp}`;
     }
 }
 
@@ -309,4 +397,4 @@ const debugVisitor = () => {
     return { startNode, endNode, nodeNext, startRlshp, endRlshp, rlshpNext }
 }
 
-export { Graph, GraphWriter, GraphInspector }
+export { Graph, GraphWriter, GraphReader, GraphInspector, Node, Rlshp, Prop }

@@ -1,4 +1,4 @@
-import { Graph, GraphInspector } from './graph.js'
+import { Graph, GraphReader, GraphInspector } from './graph.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
@@ -152,6 +152,30 @@ const largerGraphToVector = async () => {
     console.log('---')
 }
 
+const graphReaderProlly = async () => {
+
+    console.log('Prolly storage')
+    const g = new Graph()
+    const gw = g.writer()
+    const start = new Date()
+    createLargerGraph(gw)
+    const s1 = await prollyStorage()
+    const blockResult1 = await gw.commit(s1)
+    await s1.showBlocks(blockResult1)
+    const end = new Date()
+    console.log(`Insert duration ${end - start} ms`)
+
+    //const path = ['2021', 'chemistry', 'laureates']
+    const path = ['2021', 'chemistry', 'laureates']
+    const reader = new GraphReader(s1)
+    const results = await reader.read(path, 'firstname')
+    for await (const result of results) {
+        console.log('---Found---')
+        console.log(result)
+    }
+}
+
+
 {
     await graphToProlly()
     console.log('---')
@@ -178,3 +202,7 @@ const largerGraphToVector = async () => {
 }
 
 
+{
+    await graphReaderProlly()
+    console.log('---')
+}

@@ -2,12 +2,13 @@ import * as codec from '@ipld/dag-cbor'
 import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import { create, load } from 'prolly-trees/map'
 import { bf, simpleCompare as compare } from 'prolly-trees/utils'
-import { nocache } from 'prolly-trees/cache'
+import { nocache, global as globalCache } from 'prolly-trees/cache'
 import { blockStorage } from './block-storage.js'
+import {Node, Rlshp, Prop} from './graph.js'
 
-const chunker = bf(3)
+const chunker = bf(64)
 
-const cache = nocache
+const cache = globalCache
 
 const opts = { cache, chunker, codec, hasher }
 
@@ -47,6 +48,36 @@ const prollyStorage = () => {
             blocks.push(block)
         }
         return blocks
+    }
+
+    const nodeGet = async offset => {
+        const {result: value} = await nodesRoot.get(offset.toString())
+        return Node.fromJson(value)
+    }
+
+    const rlshpGet = async offset => {
+        const {result: value} = await rlshpsRoot.get(offset.toString())
+        return Rlshp.fromJson(value)
+    }
+
+    const propGet = async offset => {
+        const {result: value} = await propsRoot.get(offset.toString())
+        return Prop.fromJson(value)
+    }
+
+    const nodesGet = async offsets => {
+        const {result: values} = await nodesRoot.getMany(offsets)
+        return values.map(json => Node.fromJson(json))
+    }
+
+    const rlshpsGet = async offsets => {
+        const {result: values} = await rlshpsRoot.getMany(offsets)
+        return values.map(json => Rlshp.fromJson(json))
+    }
+
+    const propsGet = async offsets => {
+        const {result: values} = await propsRoot.getMany(offsets)
+        return values.map(json => Prop.fromJson(json))
     }
 
     const propsCreate = async (props) => {
@@ -184,7 +215,7 @@ const prollyStorage = () => {
         return { percentNodes, percentRlshp, percentProps }
     }
 
-    return { nodeStore, rlshpStore, propStore, storageCommit, showBlocks, showStoredBlocks, size, count, percent }
+    return { nodeStore, rlshpStore, propStore, nodesRoot, rlshpsRoot, propsRoot, storageCommit, showBlocks, showStoredBlocks, size, count, percent, nodesGet, rlshpsGet, propsGet, nodeGet, rlshpGet, propGet }
 }
 
 export { prollyStorage }
