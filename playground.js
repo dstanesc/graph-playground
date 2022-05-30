@@ -152,7 +152,7 @@ const largerGraphToVector = async () => {
     console.log('---')
 }
 
-const graphReaderProlly = async (path) => {
+const graphReaderProlly = async (path, select) => {
 
     console.log('Prolly storage')
     const g = new Graph()
@@ -168,7 +168,7 @@ const graphReaderProlly = async (path) => {
     //const path = ['2021', 'chemistry', 'laureates']
     //const path = ['1901', 'medicine', 'laureates']
     const reader = new GraphReader(s1)
-    const results = await reader.read(path, 'surname')
+    const results = await reader.read(path, select)
     for await (const result of results) {
         console.log('---Found---')
         console.log(result)
@@ -177,7 +177,7 @@ const graphReaderProlly = async (path) => {
     console.log(`Query duration ${end - start} ms`)
 }
 
-const graphReaderHamt = async (path) => {
+const graphReaderHamt = async (path, select) => {
 
     console.log('Hamt storage')
     const g = new Graph()
@@ -193,7 +193,7 @@ const graphReaderHamt = async (path) => {
     //const path = ['2021', 'chemistry', 'laureates']
     //const path = ['1901', 'medicine', 'laureates']
     const reader = new GraphReader(s1)
-    const results = await reader.read(path, 'surname')
+    const results = await reader.read(path, select)
     for await (const result of results) {
         console.log('---Found---')
         console.log(result)
@@ -231,24 +231,24 @@ const graphReaderHamt = async (path) => {
 
 {
     //quick scan
-    await graphReaderProlly(['2021', 'chemistry', 'laureates'])
+    await graphReaderProlly(['2021', 'chemistry', 'laureates'], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //quick scan
-    await graphReaderHamt(['2021', 'chemistry', 'laureates'])
+    await graphReaderHamt(['2021', 'chemistry', 'laureates'], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //full scan
-    await graphReaderProlly(['1901', 'medicine', 'laureates'])
+    await graphReaderProlly(['1901', 'medicine', 'laureates'], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //full scan
-    await graphReaderHamt(['1901', 'medicine', 'laureates'])
+    await graphReaderHamt(['1901', 'medicine', 'laureates'], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }

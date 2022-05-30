@@ -79,21 +79,30 @@ class GraphReader {
         if (node.nextProp !== undefined) {
             const propJson = await this.propGet(node.nextProp)
             const firstProp = Prop.fromJson(propJson)
-            if (firstProp.key === select)
-                yield firstProp
-            else
-                yield* await this.getPropsProp(firstProp, select)
+            const result = {}
+            if (select.includes(firstProp.key)) {
+                result[firstProp.key] = firstProp.value
+                if (Object.keys(result).length === select.length) {
+                    yield result
+                } else
+                    yield* await this.getPropsProp(firstProp, select, result)
+            } else
+                yield* await this.getPropsProp(firstProp, select, result)
         }
     }
 
-    async * getPropsProp(prop, select) {
+    async * getPropsProp(prop, select, result) {
         if (prop.nextProp !== undefined) {
             const propJson = await this.propGet(prop.nextProp)
             const nextProp = Prop.fromJson(propJson)
-            if (nextProp.key === select)
-                yield nextProp
-            else
-                yield* await this.getPropsProp(nextProp, select)
+            if (select.includes(nextProp.key)) {
+                result[nextProp.key] = nextProp.value
+                if (Object.keys(result).length === select.length) {
+                    yield result
+                } else
+                    yield* await this.getPropsProp(nextProp, select, result)
+            } else
+                yield* await this.getPropsProp(nextProp, select, result)
         }
     }
 
