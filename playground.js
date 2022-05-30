@@ -152,27 +152,54 @@ const largerGraphToVector = async () => {
     console.log('---')
 }
 
-const graphReaderProlly = async () => {
+const graphReaderProlly = async (path) => {
 
     console.log('Prolly storage')
     const g = new Graph()
     const gw = g.writer()
-    const start = new Date()
+    let start = new Date()
     createLargerGraph(gw)
     const s1 = await prollyStorage()
     const blockResult1 = await gw.commit(s1)
-    await s1.showBlocks(blockResult1)
-    const end = new Date()
+    //await s1.showBlocks(blockResult1)
+    let end = new Date()
     console.log(`Insert duration ${end - start} ms`)
-
+    start = new Date()
     //const path = ['2021', 'chemistry', 'laureates']
-    const path = ['1901', 'medicine', 'laureates']
+    //const path = ['1901', 'medicine', 'laureates']
     const reader = new GraphReader(s1)
     const results = await reader.read(path, 'surname')
     for await (const result of results) {
         console.log('---Found---')
         console.log(result)
     }
+    end = new Date()
+    console.log(`Query duration ${end - start} ms`)
+}
+
+const graphReaderHamt = async (path) => {
+
+    console.log('Hamt storage')
+    const g = new Graph()
+    const gw = g.writer()
+    let start = new Date()
+    createLargerGraph(gw)
+    const s1 = await hamtStorage()
+    const blockResult1 = await gw.commit(s1)
+    //await s1.showBlocks(blockResult1)
+    let end = new Date()
+    console.log(`Insert duration ${end - start} ms`)
+    start = new Date()
+    //const path = ['2021', 'chemistry', 'laureates']
+    //const path = ['1901', 'medicine', 'laureates']
+    const reader = new GraphReader(s1)
+    const results = await reader.read(path, 'surname')
+    for await (const result of results) {
+        console.log('---Found---')
+        console.log(result)
+    }
+    end = new Date()
+    console.log(`Query duration ${end - start} ms`)
 }
 
 
@@ -203,6 +230,25 @@ const graphReaderProlly = async () => {
 
 
 {
-    await graphReaderProlly()
+    //quick scan
+    await graphReaderProlly(['2021', 'chemistry', 'laureates'])
+    console.log('---')
+}
+
+{
+    //quick scan
+    await graphReaderHamt(['2021', 'chemistry', 'laureates'])
+    console.log('---')
+}
+
+{
+    //full scan
+    await graphReaderProlly(['1901', 'medicine', 'laureates'])
+    console.log('---')
+}
+
+{
+    //full scan
+    await graphReaderHamt(['1901', 'medicine', 'laureates'])
     console.log('---')
 }
