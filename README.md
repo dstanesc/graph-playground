@@ -45,7 +45,7 @@ npm start
 npm run clean
 ```
 
-## Results
+## Storage Results
 
 ```
 // bf(3), dag-cbor, sha2-256
@@ -84,6 +84,94 @@ Block increase 0.15 %
 ---
 ```
 
+## Pseudo Query Language
+
+Navigation based on a path of elements. Each path element is a constraint on rlshp label combined with node label.
+
+```
+[{rlshpLabel: nodeLabel}, ...]
+
+eg. [{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}]
+```
+
+Property selection is a list of property labels
+
+```
+['propLabel', ...]
+
+eg. ['surname', 'firstname', 'motivation']
+```
+
+## Query Results
+
+### Quick Scan
+
+`PATH [{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}]`
+`SELECT ['surname', 'firstname', 'motivation']`
+
+Prolly bf(64)
+
+```
+---Found---
+{
+  firstname: 'Benjamin',
+  surname: 'List',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+---Found---
+{
+  firstname: 'David',
+  surname: 'MacMillan',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+Query duration 4 ms
+```
+Hamt bitWidth: 4, bucketSize: 3
+
+```
+---Found---
+{
+  firstname: 'Benjamin',
+  surname: 'List',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+---Found---
+{
+  firstname: 'David',
+  surname: 'MacMillan',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+Query duration 7 ms
+```
+
+### Full Scan
+
+`PATH [{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}]`
+`SELECT ['surname', 'firstname', 'motivation']`
+
+Prolly bf(64)
+
+```
+---Found---
+{
+  firstname: 'Emil',
+  surname: 'von Behring',
+  motivation: '"for his work on serum therapy, especially its application against diphtheria, by which he has opened a new road in the domain of medical science and thereby placed in the hands of the physician a victorious weapon against illness and deaths"'
+}
+Query duration 9 ms
+```
+
+Hamt bitWidth: 4, bucketSize: 3
+
+```
+---Found---
+{
+  firstname: 'Emil',
+  surname: 'von Behring',
+  motivation: '"for his work on serum therapy, especially its application against diphtheria, by which he has opened a new road in the domain of medical science and thereby placed in the hands of the physician a victorious weapon against illness and deaths"'
+}
+Query duration 112 ms
+```
 
 ## Other Links
 - [Immutable Asynchronous Vector](https://github.com/rvagg/iavector)
