@@ -132,7 +132,7 @@ __Prolly__
 }
 Query duration 4 ms
 
-// bf: 4 -> Query duration 22 ms
+// bf: 4 -> Query duration 4 ms
 ```
 __Hamt__ 
 - bitWidth: 4, 
