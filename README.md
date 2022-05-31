@@ -21,7 +21,7 @@ Node structure
 ```
 Rlshp structure
 ```js
-{offset, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp, secondNodePrevRlshp, secondNodeNextRlshp}
+{offset, rlshpLabel, firstNode, secondNode, firstNodePrevRlshp, firstNodeNextRlshp, secondNodePrevRlshp, secondNodeNextRlshp}
 ```
 Prop structure
 ```js
@@ -107,9 +107,11 @@ eg. ['surname', 'firstname', 'motivation']
 ### Quick Scan
 
 `PATH [{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}]`
+
 `SELECT ['surname', 'firstname', 'motivation']`
 
-Prolly bf(64)
+__Prolly__ 
+- bf: 64
 
 ```
 ---Found---
@@ -126,7 +128,9 @@ Prolly bf(64)
 }
 Query duration 4 ms
 ```
-Hamt bitWidth: 4, bucketSize: 3
+__Hamt__ 
+- bitWidth: 4, 
+- bucketSize: 3
 
 ```
 ---Found---
@@ -147,9 +151,11 @@ Query duration 7 ms
 ### Full Scan
 
 `PATH [{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}]`
+
 `SELECT ['surname', 'firstname', 'motivation']`
 
-Prolly bf(64)
+__Prolly__ 
+- bf: 64
 
 ```
 ---Found---
@@ -161,7 +167,9 @@ Prolly bf(64)
 Query duration 9 ms
 ```
 
-Hamt bitWidth: 4, bucketSize: 3
+__Hamt__ 
+- bitWidth: 4, 
+- bucketSize: 3
 
 ```
 ---Found---
