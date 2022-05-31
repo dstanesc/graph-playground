@@ -6,7 +6,7 @@ import { nocache, global as globalCache } from 'prolly-trees/cache'
 import { blockStorage } from './block-storage.js'
 import {Node, Rlshp, Prop} from './graph.js'
 
-const chunker = bf(64)
+const chunker = bf(3)
 
 const cache = globalCache
 

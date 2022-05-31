@@ -115,7 +115,7 @@ eg. ['surname', 'firstname', 'motivation']
 `SELECT ['surname', 'firstname', 'motivation']`
 
 __Prolly__ 
-- bf: 64
+- bf: 3
 
 ```
 ---Found---
@@ -131,6 +131,8 @@ __Prolly__
   motivation: '"for the development of asymmetric organocatalysis"'
 }
 Query duration 4 ms
+
+// bf: 4 -> Query duration 22 ms
 ```
 __Hamt__ 
 - bitWidth: 4, 
@@ -159,7 +161,7 @@ Query duration 7 ms
 `SELECT ['surname', 'firstname', 'motivation']`
 
 __Prolly__ 
-- bf: 64
+- bf: 3
 
 ```
 ---Found---
@@ -168,7 +170,8 @@ __Prolly__
   surname: 'von Behring',
   motivation: '"for his work on serum therapy, especially its application against diphtheria, by which he has opened a new road in the domain of medical science and thereby placed in the hands of the physician a victorious weapon against illness and deaths"'
 }
-Query duration 9 ms
+Query duration 4 ms
+// bf: 4 -> Query duration 13 ms
 ```
 
 __Hamt__ 
