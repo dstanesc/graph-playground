@@ -104,6 +104,10 @@ eg. ['surname', 'firstname', 'motivation']
 
 ## Query Results
 
+### Dataset
+
+- [Nobel prizes](./nobel.js)
+
 ### Quick Scan
 
 `PATH [{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}]`
