@@ -33,7 +33,7 @@ const graphToProlly = async () => {
     console.log(`Block increase rlshps ${percentRlshp} %`)
     console.log(`Block increase props ${percentProps} %`)
     console.log('---')
-    new GraphInspector(g).debug()
+    //new GraphInspector(g).debug()
 }
 
 const graphToHamt = async () => {
@@ -65,7 +65,7 @@ const graphToHamt = async () => {
 
 
 const largerGraphToProlly = async () => {
-    console.log('Prolly storage')
+    console.log('Prolly storage - larger')
     const g = new Graph()
     const gw = g.writer()
     const start = new Date()
@@ -96,7 +96,7 @@ const largerGraphToProlly = async () => {
 }
 
 const largerGraphToHamt = async () => {
-    console.log('Hamt storage')
+    console.log('Hamt storage - larger')
     const g = new Graph()
     const gw = g.writer()
     const start = new Date()
@@ -125,7 +125,7 @@ const largerGraphToHamt = async () => {
 
 
 const largerGraphToVector = async () => {
-    console.log('Vector storage')
+    console.log('Vector storage - larger')
     const g = new Graph()
     const gw = g.writer()
     const start = new Date()
@@ -154,7 +154,7 @@ const largerGraphToVector = async () => {
 
 const graphReaderProlly = async (path, select) => {
 
-    console.log('Prolly storage')
+    console.log('Prolly storage - larger')
     const g = new Graph()
     const gw = g.writer()
     let start = new Date()
@@ -179,7 +179,7 @@ const graphReaderProlly = async (path, select) => {
 
 const graphReaderHamt = async (path, select) => {
 
-    console.log('Hamt storage')
+    console.log('Hamt storage - larger')
     const g = new Graph()
     const gw = g.writer()
     let start = new Date()
@@ -203,52 +203,52 @@ const graphReaderHamt = async (path, select) => {
 }
 
 
-// {
-//     await graphToProlly()
-//     console.log('---')
-// }
+{
+    await graphToProlly()
+    console.log('---')
+}
 
-// {
-//     await graphToHamt()
-//     console.log('---')
-// }
+{
+    await graphToHamt()
+    console.log('---')
+}
 
-// {
-//     await largerGraphToProlly()
-//     console.log('---')
-// }
+{
+    await largerGraphToProlly()
+    console.log('---')
+}
 
-// {
-//     await largerGraphToHamt()
-//     console.log('---')
-// }
+{
+    await largerGraphToHamt()
+    console.log('---')
+}
 
-// {
-//     await largerGraphToVector()
-//     console.log('---')
-// }
+{
+    await largerGraphToVector()
+    console.log('---')
+}
 
 
 {
     //quick scan
-    await graphReaderProlly(['2021', 'chemistry', 'laureates'], ['surname', 'firstname', 'motivation'])
+    await graphReaderProlly([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //quick scan
-    await graphReaderHamt(['2021', 'chemistry', 'laureates'], ['surname', 'firstname', 'motivation'])
+    await graphReaderHamt([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //full scan
-    await graphReaderProlly(['1901', 'medicine', 'laureates'], ['surname', 'firstname', 'motivation'])
+    await graphReaderProlly([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //full scan
-    await graphReaderHamt(['1901', 'medicine', 'laureates'], ['surname', 'firstname', 'motivation'])
+    await graphReaderHamt([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }

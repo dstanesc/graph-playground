@@ -54,24 +54,26 @@ class GraphReader {
         }
     }
 
+    keyValue(elem) {
+        return Object.entries(elem)[0]
+    }
+
     async * readInternal(node, index, path, select) {
         if (index < path.length) {
             const elem = path[index]
-            const rlshps = await this.getRlshpsNode(node)
+            const [rlshpLabel, nodeLabel] = this.keyValue(elem)
+            const rlshps = await this.getRlshpsNode(node, rlshpLabel)
             for await (const rlshp of rlshps) {
                 const childNode = await this.nodeGet(rlshp.secondNode)
-                if (childNode.label === elem) {
+                if (nodeLabel === '*' || childNode.label === nodeLabel) {
                     if (index === path.length - 1) {
-                        const resultNodes = await this.getNodesNode(childNode)
-                        for await (const resultNode of resultNodes) {
-                            yield* await this.getPropsNode(resultNode, select)
-                        }
-                        throw new SearchCompleted()
+                       yield* await this.getPropsNode(childNode, select)
                     } else {
                         yield* await this.readInternal(childNode, index + 1, path, select)
                     }
                 }
             }
+            throw new SearchCompleted()
         }
     }
 
@@ -114,21 +116,23 @@ class GraphReader {
         }
     }
 
-    async * getRlshpsNode(node) {
+    async * getRlshpsNode(node, rlshpLabel) {
         if (node.nextRlshp !== undefined) {
             const rlshpJson = await this.rlshpGet(node.nextRlshp)
             const firstRlshp = Rlshp.fromJson(rlshpJson)
-            yield firstRlshp
-            yield* await this.getRlshpsRlshp(firstRlshp)
+            if (firstRlshp.label === rlshpLabel)
+                yield firstRlshp
+            yield* await this.getRlshpsRlshp(firstRlshp, rlshpLabel)
         }
     }
 
-    async * getRlshpsRlshp(rlshp) {
+    async * getRlshpsRlshp(rlshp, rlshpLabel) {
         if (rlshp.firstNextRel !== undefined) {
             const rlshpJson = await this.rlshpGet(rlshp.firstNextRel)
             const firstRlshp = Rlshp.fromJson(rlshpJson)
-            yield firstRlshp
-            yield* await this.getRlshpsRlshp(firstRlshp)
+            if (firstRlshp.label === rlshpLabel)
+                yield firstRlshp
+            yield* await this.getRlshpsRlshp(firstRlshp, rlshpLabel)
         }
     }
 }
@@ -204,8 +208,9 @@ class GraphWriter {
 }
 
 class Rlshp {
-    constructor(offset, firstNode, secondNode, firstPrevRel, firstNextRel) {
+    constructor(offset, label, firstNode, secondNode, firstPrevRel, firstNextRel) {
         this.offset = offset
+        this.label = label
         this.firstNode = firstNode
         this.secondNode = secondNode
         this.firstPrevRel = firstPrevRel
@@ -215,6 +220,7 @@ class Rlshp {
     toJson() {
         const json = {
             offset: this.offset,
+            label: this.label,
             firstNode: this.firstNode,
             secondNode: this.secondNode,
         }
@@ -235,11 +241,11 @@ class Rlshp {
     }
 
     static fromJson(json) {
-        return new Rlshp(json.offset, json.firstNode, json.secondNode, json.firstPrevRel, json.firstNextRel)
+        return new Rlshp(json.offset, json.label, json.firstNode, json.secondNode, json.firstPrevRel, json.firstNextRel)
     }
 
     toString() {
-        return `Rlshp ${this.offset}: ${this.firstNode}=>${this.secondNode}`;
+        return `Rlshp ${this.offset}: ${this.label} : ${this.firstNode}=>${this.secondNode}`;
     }
 }
 
@@ -253,8 +259,8 @@ class Node {
     }
 
 
-    addRlshp(graphWriter, node) {
-        const rlshp = new Rlshp(graphWriter.rlshpOffset++, this.offset, node.offset)
+    addRlshp(graphWriter, label, node) {
+        const rlshp = new Rlshp(graphWriter.rlshpOffset++, label, this.offset, node.offset)
         if (this.nextRlshp !== undefined) {
             graphWriter.getRlshp(this.nextRlshp).addRlshp(graphWriter, rlshp)
         } else
