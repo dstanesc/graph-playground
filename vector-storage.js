@@ -16,8 +16,8 @@ class Block {
 const vectorStorage = async () => {
 
     let nodeStore = blockStorage()
-    let rlshpStore = blockStorage()
-    let propStore = blockStorage()
+    let rlshpStore = nodeStore
+    let propStore = nodeStore
 
     let nodesRoot
     let rlshpsRoot
