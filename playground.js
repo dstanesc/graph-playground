@@ -222,43 +222,43 @@ const graphReaderVector = async (path, select) => {
 }
 
 
-// {
-//     await graphToProlly()
-//     console.log('---')
-// }
+{
+    await graphToProlly()
+    console.log('---')
+}
 
-// {
-//     await graphToHamt()
-//     console.log('---')
-// }
+{
+    await graphToHamt()
+    console.log('---')
+}
 
-// {
-//     await largerGraphToProlly()
-//     console.log('---')
-// }
+{
+    await largerGraphToProlly()
+    console.log('---')
+}
 
-// {
-//     await largerGraphToHamt()
-//     console.log('---')
-// }
+{
+    await largerGraphToHamt()
+    console.log('---')
+}
 
-// {
-//     await largerGraphToVector()
-//     console.log('---')
-// }
+{
+    await largerGraphToVector()
+    console.log('---')
+}
 
 
-// {
-//     //quick scan
-//     await graphReaderProlly([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
-//     console.log('---')
-// }
+{
+    //quick scan
+    await graphReaderProlly([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    console.log('---')
+}
 
-// {
-//     //quick scan
-//     await graphReaderHamt([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
-//     console.log('---')
-// }
+{
+    //quick scan
+    await graphReaderHamt([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    console.log('---')
+}
 
 {
     //quick scan
@@ -266,17 +266,17 @@ const graphReaderVector = async (path, select) => {
     console.log('---')
 }
 
-// {
-//     //full scan
-//     await graphReaderProlly([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
-//     console.log('---')
-// }
+{
+    //full scan
+    await graphReaderProlly([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    console.log('---')
+}
 
-// {
-//     //full scan
-//     await graphReaderHamt([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
-//     console.log('---')
-// }
+{
+    //full scan
+    await graphReaderHamt([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    console.log('---')
+}
 
 {
     //full scan
