@@ -170,7 +170,7 @@ __Prolly__
   surname: 'von Behring',
   motivation: '"for his work on serum therapy, especially its application against diphtheria, by which he has opened a new road in the domain of medical science and thereby placed in the hands of the physician a victorious weapon against illness and deaths"'
 }
-Query duration 4 ms
+Query duration 19 ms
 // bf: 4 -> Query duration 13 ms
 ```
 
