@@ -4,6 +4,7 @@ import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
 import { createGraph, updateGraph } from './graph-data.js'
 import { createLargerGraph, updateLargerGraph } from './graph-data-larger.js'
+import { history } from './history.js'
 
 const graphToProlly = async () => {
     console.log('Prolly storage')
@@ -11,7 +12,8 @@ const graphToProlly = async () => {
     const gw = g.writer()
     const start = new Date()
     createGraph(gw)
-    const s1 = await prollyStorage()
+    const h = await history()
+    const s1 = await prollyStorage(h)
     const blockResult1 = await gw.commit(s1)
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
@@ -33,6 +35,7 @@ const graphToProlly = async () => {
     console.log(`Block increase rlshps ${percentRlshp} %`)
     console.log(`Block increase props ${percentProps} %`)
     console.log('---')
+    await h.show()
     //new GraphInspector(g).debug()
 }
 
@@ -42,7 +45,8 @@ const graphToHamt = async () => {
     const gw = g.writer()
     const start = new Date()
     createGraph(gw)
-    const s1 = await hamtStorage()
+    const h = await history()
+    const s1 = await hamtStorage(h)
     const roots = await gw.commit(s1)
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
@@ -61,6 +65,7 @@ const graphToHamt = async () => {
     console.log(`Blocks count2 ${count2}`)
     console.log(`Block increase ${(((size2 - size1) / size2) * 100).toFixed(2)} %`)
     console.log('---')
+    await h.show()
 }
 
 
@@ -70,7 +75,8 @@ const largerGraphToProlly = async () => {
     const gw = g.writer()
     const start = new Date()
     createLargerGraph(gw)
-    const s1 = await prollyStorage()
+    const h = await history()
+    const s1 = await prollyStorage(h)
     const blockResult1 = await gw.commit(s1)
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
@@ -93,6 +99,7 @@ const largerGraphToProlly = async () => {
     console.log(`Block increase rlshps ${percentRlshp} %`)
     console.log(`Block increase props ${percentProps} %`)
     console.log('---')
+    await h.show()
 }
 
 const largerGraphToHamt = async () => {
@@ -101,7 +108,8 @@ const largerGraphToHamt = async () => {
     const gw = g.writer()
     const start = new Date()
     createLargerGraph(gw)
-    const s1 = await hamtStorage()
+    const h = await history()
+    const s1 = await hamtStorage(h)
     const roots = await gw.commit(s1)
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
@@ -121,6 +129,7 @@ const largerGraphToHamt = async () => {
     console.log(`Blocks count2 ${count2}`)
     console.log(`Block increase ${(((size2 - size1) / size2) * 100).toFixed(2)} %`)
     console.log('---')
+    await h.show()
 }
 
 
@@ -130,7 +139,8 @@ const largerGraphToVector = async () => {
     const gw = g.writer()
     const start = new Date()
     createLargerGraph(gw)
-    const s1 = await vectorStorage()
+    const h = await history()
+    const s1 = await vectorStorage(h)
     const roots = await gw.commit(s1)
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
@@ -150,6 +160,7 @@ const largerGraphToVector = async () => {
     console.log(`Blocks count2 ${count2}`)
     console.log(`Block increase ${(((size2 - size1) / size2) * 100).toFixed(2)} %`)
     console.log('---')
+    await h.show()
 }
 
 const graphReaderProlly = async (path, select) => {
@@ -159,7 +170,8 @@ const graphReaderProlly = async (path, select) => {
     const gw = g.writer()
     let start = new Date()
     createLargerGraph(gw)
-    const s1 = await prollyStorage()
+    const h = await history()
+    const s1 = await prollyStorage(h)
     const blockResult1 = await gw.commit(s1)
     //await s1.showBlocks(blockResult1)
     let end = new Date()
@@ -182,7 +194,8 @@ const graphReaderHamt = async (path, select) => {
     const gw = g.writer()
     let start = new Date()
     createLargerGraph(gw)
-    const s1 = await hamtStorage()
+    const h = await history()
+    const s1 = await hamtStorage(h)
     const blockResult1 = await gw.commit(s1)
     //await s1.showBlocks(blockResult1)
     let end = new Date()
@@ -205,7 +218,8 @@ const graphReaderVector = async (path, select) => {
     const gw = g.writer()
     let start = new Date()
     createLargerGraph(gw)
-    const s1 = await vectorStorage()
+    const h = await history()
+    const s1 = await vectorStorage(h)
     const blockResult1 = await gw.commit(s1)
     //await s1.showBlocks(blockResult1)
     let end = new Date()
@@ -250,36 +264,36 @@ const graphReaderVector = async (path, select) => {
 
 {
     //quick scan
-    await graphReaderProlly([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    await graphReaderProlly([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //quick scan
-    await graphReaderHamt([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    await graphReaderHamt([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //quick scan
-    await graphReaderVector([{'year':'2021'}, {'category':'chemistry'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    await graphReaderVector([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //full scan
-    await graphReaderProlly([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    await graphReaderProlly([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //full scan
-    await graphReaderHamt([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    await graphReaderHamt([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }
 
 {
     //full scan
-    await graphReaderVector([{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}], ['surname', 'firstname', 'motivation'])
+    await graphReaderVector([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
     console.log('---')
 }

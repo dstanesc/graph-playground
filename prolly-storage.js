@@ -12,14 +12,14 @@ const cache = globalCache
 
 const opts = { cache, chunker, codec, hasher }
 
-const prollyStorage = () => {
+const prollyStorage = async history => {
 
-    let nodeStore = blockStorage()
-    let rlshpStore = nodeStore
-    let propStore = nodeStore
-    let nodesRoot
-    let rlshpsRoot
-    let propsRoot
+    const nodeStore = blockStorage()
+    const rlshpStore = nodeStore
+    const propStore = nodeStore
+    
+    let { offset, nodesRoot, rlshpsRoot, propsRoot } = await history.current()
+
     const nodesCreate = async (nodes) => {
         const list = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
         const get = nodeStore.get
@@ -29,7 +29,7 @@ const prollyStorage = () => {
             const block = await node.block
             const cid = block.cid
             await nodeStore.put(cid, block)
-            nodesRoot = address
+            nodesRoot = address.toString()
             blocks.push(block)
         }
         return blocks
@@ -44,7 +44,7 @@ const prollyStorage = () => {
             const block = await node.block
             const cid = block.cid
             await rlshpStore.put(cid, block)
-            rlshpsRoot = address
+            rlshpsRoot = address.toString()
             blocks.push(block)
         }
         return blocks
@@ -60,7 +60,7 @@ const prollyStorage = () => {
             const block = await node.block
             const cid = block.cid
             await propStore.put(cid, block)
-            propsRoot = address
+            propsRoot = address.toString()
             blocks.push(block)
         }
         return blocks
@@ -99,34 +99,19 @@ const prollyStorage = () => {
         return await load({ cid: offset, get, compare, ...opts })
     }
 
-    // const nodesGet = async offsets => {
-    //     const {result: values} = await nodesRoot.getMany(offsets)
-    //     return values.map(json => Node.fromJson(json))
-    // }
-
-    // const rlshpsGet = async offsets => {
-    //     const {result: values} = await rlshpsRoot.getMany(offsets)
-    //     return values.map(json => Rlshp.fromJson(json))
-    // }
-
-    // const propsGet = async offsets => {
-    //     const {result: values} = await propsRoot.getMany(offsets)
-    //     return values.map(json => Prop.fromJson(json))
-    // }
-
     const nodesUpdate = async (nodes) => {
         const bulk = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
         const actualRoot = await loadNodesRoot(nodesRoot)
-        const blocks = await actualRoot.bulk(bulk)
-        nodesRoot = blocks.root.address
-        return blocks.blocks
+        const { blocks, root } = await actualRoot.bulk(bulk)
+        nodesRoot = (await root.address).toString()
+        return blocks
     }
 
     const rlshpsUpdate = async (rlshps) => {
         const list = rlshps.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
         const actualRoot = await loadRlshpsRoot(rlshpsRoot)
         const { blocks, root } = await actualRoot.bulk(list)
-        rlshpsRoot = root.address
+        rlshpsRoot = (await root.address).toString()
         return blocks
     }
 
@@ -134,7 +119,7 @@ const prollyStorage = () => {
         const list = props.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
         const actualRoot = await loadPropsRoot(propsRoot)
         const { blocks, root } = await actualRoot.bulk(list)
-        propsRoot = root.address
+        propsRoot = (await root.address).toString()
         return blocks
     }
 
@@ -153,6 +138,9 @@ const prollyStorage = () => {
             rlshpBlocks = await rlshpsCreate(rlshps)
             propBlocks = await propsCreate(props)
         }
+
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset})
+
         return { nodeBlocks, rlshpBlocks, propBlocks, update }
     }
 

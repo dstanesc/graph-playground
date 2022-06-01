@@ -2,7 +2,8 @@
 //import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import { create, createFrom, load } from 'ipld-vector'
 import { blockStorage } from './block-storage.js'
-import {Node, Rlshp, Prop} from './graph.js'
+import { Node, Rlshp, Prop } from './graph.js'
+
 
 const opts = { width: 4, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' }
 
@@ -13,15 +14,13 @@ class Block {
     }
 }
 
-const vectorStorage = async () => {
+const vectorStorage = async history => {
 
-    let nodeStore = blockStorage()
-    let rlshpStore = nodeStore
-    let propStore = nodeStore
+    const nodeStore = blockStorage()
+    const rlshpStore = nodeStore
+    const propStore = nodeStore
 
-    let nodesRoot
-    let rlshpsRoot
-    let propsRoot
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, prevOffset } = await history.current()
 
     const showStoredBlocks = async () => {
         let sum = 0
@@ -63,7 +62,7 @@ const vectorStorage = async () => {
         const value = await propVector.get(offset.toString())
         return Prop.fromJson(value)
     }
-    
+
     const storageCommit = async (nodes, rlshps, props) => {
 
 
@@ -96,6 +95,8 @@ const vectorStorage = async () => {
         nodesRoot = nodeVector.cid
         rlshpsRoot = rlshpVector.cid
         propsRoot = propVector.cid
+
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset})
 
         return roots()
     }

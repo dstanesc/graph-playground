@@ -17,15 +17,13 @@ class Block {
     }
 }
 
-const hamtStorage = async () => {
+const hamtStorage = async history => {
 
-    let nodeStore = blockStorage()
-    let rlshpStore = nodeStore
-    let propStore = nodeStore
+    const nodeStore = blockStorage()
+    const rlshpStore = nodeStore
+    const propStore = nodeStore
 
-    let nodesRoot
-    let rlshpsRoot
-    let propsRoot
+    let { offset, nodesRoot, rlshpsRoot, propsRoot } = await history.current()
 
     const showStoredBlocks = async () => {
         let sum = 0
@@ -81,6 +79,8 @@ const hamtStorage = async () => {
         nodesRoot = nodeMap.cid
         rlshpsRoot = rlshpMap.cid
         propsRoot = propMap.cid
+
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset})
 
         return roots()
     }
