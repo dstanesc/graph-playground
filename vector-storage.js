@@ -2,6 +2,7 @@
 //import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import { create, createFrom, load } from 'ipld-vector'
 import { blockStorage } from './block-storage.js'
+import {Node, Rlshp, Prop} from './graph.js'
 
 const opts = { width: 4, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' }
 
@@ -44,6 +45,25 @@ const vectorStorage = async () => {
         console.log(`Total stored size ${(sum / (1024)).toFixed(2)} KB`);
     }
 
+
+    const nodeGet = async offset => {
+        const nodeVector = await load(nodeStore, nodesRoot, opts)
+        const value = await nodeVector.get(offset.toString())
+        return Node.fromJson(value)
+    }
+
+    const rlshpGet = async offset => {
+        const rlshpVector = await load(rlshpStore, rlshpsRoot, opts)
+        const value = await rlshpVector.get(offset.toString())
+        return Rlshp.fromJson(value)
+    }
+
+    const propGet = async offset => {
+        const propVector = await load(propStore, propsRoot, opts)
+        const value = await propVector.get(offset.toString())
+        return Prop.fromJson(value)
+    }
+    
     const storageCommit = async (nodes, rlshps, props) => {
 
 
@@ -163,7 +183,7 @@ const vectorStorage = async () => {
         return c
     }
 
-    return { nodeStore, rlshpStore, propStore, storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks }
+    return { nodeStore, rlshpStore, propStore, storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
 }
 
 

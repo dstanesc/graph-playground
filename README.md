@@ -154,6 +154,24 @@ __Hamt__
 Query duration 7 ms
 ```
 
+__Vector__
+- width: 4
+
+```
+---Found---
+{
+  firstname: 'Benjamin',
+  surname: 'List',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+---Found---
+{
+  firstname: 'David',
+  surname: 'MacMillan',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+Query duration 8 ms
+```
 ### Full Scan
 
 `PATH [{'year':'1901'}, {'category':'medicine'}, {'laureates':'*'}]`
@@ -186,6 +204,19 @@ __Hamt__
   motivation: '"for his work on serum therapy, especially its application against diphtheria, by which he has opened a new road in the domain of medical science and thereby placed in the hands of the physician a victorious weapon against illness and deaths"'
 }
 Query duration 112 ms
+```
+
+__Vector__
+- width: 4
+
+```
+---Found---
+{
+  firstname: 'Emil',
+  surname: 'von Behring',
+  motivation: '"for his work on serum therapy, especially its application against diphtheria, by which he has opened a new road in the domain of medical science and thereby placed in the hands of the physician a victorious weapon against illness and deaths"'
+}
+Query duration 80 ms
 ```
 
 ## Other Links
