@@ -10,6 +10,7 @@
     "@ipld/car": "^4.1.2",
     "@ipld/dag-cbor": "^7.0.1",
     "@ipld/dag-json": "^8.0.1",
+    "benchmark": "^2.1.4",
     "bent": "^7.3.12",
     "ipfs-core": "^0.14.3",
     "ipld-hashmap": "^2.1.11",
@@ -28,6 +29,7 @@
   "scripts": {
     "clean": "rimraf package-lock.json node_modules",
     "test": "mocha test/test-*.js",
-    "start": "node ./playground.js"
+    "start": "node ./playground.js",
+    "bench": "node ./bench.js"
   }
 }
