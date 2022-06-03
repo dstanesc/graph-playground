@@ -155,8 +155,20 @@ class GraphWriter {
         this.initPropOffset = propOffset
     }
 
+    nextNodeOffset() {
+        return this.nodeOffset++
+    }
+
+    nextRlshpOffset() {
+        return this.rlshpOffset++
+    }
+
+    nextPropOffset() {
+        return this.propOffset++
+    }
+
     addNode(label) {
-        const node = new Node(this.nodeOffset++, label)
+        const node = new Node(this.nextNodeOffset(), label)
         //console.log(`Adding node ${node.offset} : ${node.label}`)
         this.nodesAdded.push(node)
         return node
@@ -199,7 +211,10 @@ class GraphWriter {
         this.nodesAdded = []
         this.rlshpsAdded = []
         this.propsAdded = []
-
+        this.nodesRemoved = []
+        this.rlshpsRemoved = []
+        this.propsRemoved = []
+        
         return commitResult
     }
 
@@ -275,7 +290,7 @@ class Node {
 
 
     addRlshp(graphWriter, label, node) {
-        const rlshp = new Rlshp(graphWriter.rlshpOffset++, label, this.offset, node.offset)
+        const rlshp = new Rlshp(graphWriter.nextRlshpOffset(), label, this.offset, node.offset)
         if (this.nextRlshp !== undefined) {
             graphWriter.getRlshp(this.nextRlshp).addRlshp(graphWriter, rlshp)
         } else
@@ -286,7 +301,7 @@ class Node {
 
     addProp(graphWriter, propName, propValue) {
         if (propName !== undefined && propValue !== undefined) {
-            const prop = new Prop(graphWriter.propOffset++, propName, propValue)
+            const prop = new Prop(graphWriter.nextPropOffset(), propName, propValue)
             if (this.nextProp !== undefined)
                 graphWriter.getProp(this.nextProp).addProp(graphWriter, prop)
             else
