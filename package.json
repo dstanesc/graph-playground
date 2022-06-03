@@ -30,6 +30,8 @@
     "clean": "rimraf package-lock.json node_modules",
     "test": "mocha test/test-*.js",
     "start": "node ./playground.js",
-    "bench": "node ./bench.js"
+    "bench-create": "node ./bench-creation.js",
+    "bench-full": "node ./bench-fullscan.js",
+    "bench-quick": "node ./bench-quickscan.js"
   }
 }
