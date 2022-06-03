@@ -35,17 +35,21 @@ class GraphReader {
         this.propGet = propGet
     }
 
-    async getRlshp(offset) {
-        return await this.rlshpGet(offset)
-    }
-
     async getNode(offset) {
         return await this.nodeGet(offset)
     }
 
+    async getRlshp(offset) {
+        return await this.rlshpGet(offset)
+    }
+
+    async getProp(offset) {
+        return await this.propGet(offset)
+    }
+
     async * read(path, select) {
         try {
-            const root = await this.nodeGet('0')
+            const root = await this.getNode('0')
             yield* this.readInternal(root, 0, path, select)
         } catch (e) {
             if (e instanceof SearchCompleted) {
@@ -64,7 +68,7 @@ class GraphReader {
             const [rlshpLabel, nodeLabel] = this.keyValue(elem)
             const rlshps = await this.getRlshpsNode(node, rlshpLabel)
             for await (const rlshp of rlshps) {
-                const childNode = await this.nodeGet(rlshp.secondNode)
+                const childNode = await this.getNode(rlshp.secondNode)
                 if (nodeLabel === '*' || childNode.label === nodeLabel) {
                     if (index === path.length - 1) {
                         yield* await this.getPropsNode(childNode, select)
@@ -79,7 +83,7 @@ class GraphReader {
 
     async * getPropsNode(node, select) {
         if (node.nextProp !== undefined) {
-            const propJson = await this.propGet(node.nextProp)
+            const propJson = await this.getProp(node.nextProp)
             const firstProp = Prop.fromJson(propJson)
             const result = {}
             if (select.includes(firstProp.key)) {
@@ -95,7 +99,7 @@ class GraphReader {
 
     async * getPropsProp(prop, select, result) {
         if (prop.nextProp !== undefined) {
-            const propJson = await this.propGet(prop.nextProp)
+            const propJson = await this.getProp(prop.nextProp)
             const nextProp = Prop.fromJson(propJson)
             if (select.includes(nextProp.key)) {
                 result[nextProp.key] = nextProp.value
@@ -111,14 +115,14 @@ class GraphReader {
     async * getNodesNode(node, rlshpLabel) {
         const rlshps = await this.getRlshpsNode(node, rlshpLabel)
         for await (const rlshp of rlshps) {
-            const childNode = await this.nodeGet(rlshp.secondNode)
+            const childNode = await this.getNode(rlshp.secondNode)
             yield childNode
         }
     }
 
     async * getRlshpsNode(node, rlshpLabel) {
         if (node.nextRlshp !== undefined) {
-            const rlshpJson = await this.rlshpGet(node.nextRlshp)
+            const rlshpJson = await this.getRlshp(node.nextRlshp)
             const firstRlshp = Rlshp.fromJson(rlshpJson)
             if (firstRlshp.label === rlshpLabel)
                 yield firstRlshp
@@ -128,7 +132,7 @@ class GraphReader {
 
     async * getRlshpsRlshp(rlshp, rlshpLabel) {
         if (rlshp.firstNextRel !== undefined) {
-            const rlshpJson = await this.rlshpGet(rlshp.firstNextRel)
+            const rlshpJson = await this.getRlshp(rlshp.firstNextRel)
             const firstRlshp = Rlshp.fromJson(rlshpJson)
             if (firstRlshp.label === rlshpLabel)
                 yield firstRlshp
