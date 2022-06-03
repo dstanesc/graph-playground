@@ -108,8 +108,8 @@ class GraphReader {
         }
     }
 
-    async * getNodesNode(node) {
-        const rlshps = await this.getRlshpsNode(node)
+    async * getNodesNode(node, rlshpLabel) {
+        const rlshps = await this.getRlshpsNode(node, rlshpLabel)
         for await (const rlshp of rlshps) {
             const childNode = await this.nodeGet(rlshp.secondNode)
             yield childNode
