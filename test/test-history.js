@@ -9,13 +9,13 @@ import { history } from '../history.js'
 
 describe('Prolly Nobel Prizes', function () {
 
-    const g = new Graph()
-    let s1
+    let g 
     let h
 
     before(async function () {
         h = await history()
-        s1 = await prollyStorage(h)
+        const s1 = await prollyStorage(h)
+        g = new Graph(s1)
     });
 
     describe('Writer', function () {
@@ -23,16 +23,16 @@ describe('Prolly Nobel Prizes', function () {
             this.timeout(5000);
             const gw = g.writer()
             createLargerGraph(gw)
-            await gw.commit(s1)
+            await gw.commit()
             assert.equal(await h.size(), 1)
         });
 
         it('history size should be 2 after update', async function () {
             this.timeout(500);
             const gw = g.writer()
-            const root = g.getRoot();
+            const root = await g.getRoot();
             updateLargerGraph(root, gw)
-            await gw.commit(s1)
+            await gw.commit()
             assert.equal(await h.size(), 2)
         });
 
@@ -47,13 +47,13 @@ describe('Prolly Nobel Prizes', function () {
 
 describe('Hamt Nobel Prizes', function () {
 
-    const g = new Graph()
-    let s1
+    let g 
     let h
 
     before(async function () {
         h = await history()
-        s1 = await hamtStorage(h)
+        const s1 = await hamtStorage(h)
+        g = new Graph(s1)
     });
 
     describe('Writer', function () {
@@ -61,16 +61,16 @@ describe('Hamt Nobel Prizes', function () {
             this.timeout(5000);
             const gw = g.writer()
             createLargerGraph(gw)
-            await gw.commit(s1)
+            await gw.commit()
             assert.equal(await h.size(), 1)
         });
 
         it('history size should be 2 after update', async function () {
             this.timeout(500);
             const gw = g.writer()
-            const root = g.getRoot();
+            const root = await g.getRoot();
             updateLargerGraph(root, gw)
-            await gw.commit(s1)
+            await gw.commit()
             assert.equal(await h.size(), 2)
         });
 
@@ -86,13 +86,13 @@ describe('Hamt Nobel Prizes', function () {
 
 describe('Vector Nobel Prizes', function () {
 
-    const g = new Graph()
-    let s1
+    let g 
     let h
 
     before(async function () {
         h = await history()
-        s1 = await vectorStorage(h)
+        const s1 = await vectorStorage(h)
+        g = new Graph(s1)
     });
 
     describe('Writer', function () {
@@ -100,16 +100,16 @@ describe('Vector Nobel Prizes', function () {
             this.timeout(5000);
             const gw = g.writer()
             createLargerGraph(gw)
-            await gw.commit(s1)
+            await gw.commit()
             assert.equal(await h.size(), 1)
         });
 
         it('history size should be 2 after update', async function () {
             this.timeout(500);
             const gw = g.writer()
-            const root = g.getRoot();
+            const root = await g.getRoot();
             updateLargerGraph(root, gw)
-            await gw.commit(s1)
+            await gw.commit()
             assert.equal(await h.size(), 2)
         });
     });

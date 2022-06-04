@@ -39,17 +39,16 @@ const s3 = async () => {
   return g
 }
 
-
 const sx = async () => {
-  const v = await s1()
-  const p = await s2()
-  const h = await s3()
-  return { v, p, h }
+  const g1 = await s1()
+  const g2 = await s2()
+  const g3 = await s3()
+  return { g1, g2, g3 }
 }
 
 sx().then(s => {
 
-  const querySuite = new Benchmark.Suite('Graph Quick Scan Suite')
+  const querySuite = new Benchmark.Suite('Graph Full Scan Cached Compare Suite')
 
   querySuite.on('complete', event => {
     const suite = event.currentTarget;
@@ -63,30 +62,30 @@ sx().then(s => {
     console.log(benchmark.toString());
   });
 
-   //FIXME order affects run performance (first always best)
+  //FIXME order affects run performance (first always best)
   querySuite
 
-    .add('Vector Reading', async () => {
-      const reader = s.v.reader()
-      const results = await reader.read([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
+    .add('Hamt Reading Cached', async () => {
+      const reader = s.g3.reader()
+      const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
         console.log(result)
       }
     })
 
-    .add('Prolly Reading', async () => {
-      const reader = s.p.reader()
-      const results = await reader.read([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
+    .add('Vector Reading Cached', async () => {
+      const reader = s.g1.reader()
+      const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
         console.log(result)
       }
     })
 
-    .add('Hamt Reading', async () => {
-      const reader = s.h.reader()
-      const results = await reader.read([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
+    .add('Prolly Reading Cached', async () => {
+      const reader = s.g2.reader()
+      const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
         console.log(result)

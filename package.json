@@ -32,6 +32,7 @@
     "start": "node ./playground.js",
     "bench-create": "node ./bench-creation.js",
     "bench-full": "node ./bench-fullscan.js",
-    "bench-quick": "node ./bench-quickscan.js"
+    "bench-quick": "node ./bench-quickscan.js",
+    "bench-cached": "node ./bench-fullscan-cached.js"
   }
 }

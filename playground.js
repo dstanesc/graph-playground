@@ -8,13 +8,13 @@ import { history } from './history.js'
 
 const graphToProlly = async () => {
     console.log('Prolly storage')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await prollyStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
     createGraph(gw)
-    const h = await history()
-    const s1 = await prollyStorage(h)
-    const blockResult1 = await gw.commit(s1)
+    const blockResult1 = await gw.commit()
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     //await s1.showBlocks(blockResult1)
@@ -24,7 +24,7 @@ const graphToProlly = async () => {
     console.log(`Blocks count1 ${count1}`)
     const gw2 = g.writer()
     updateGraph(g, gw2)
-    const blockResult2 = await gw2.commit(s1)
+    const blockResult2 = await gw2.commit()
     //await s1.showBlocks(blockResult2)
     const size2 = await s1.size(blockResult2)
     const count2 = await s1.count(blockResult2)
@@ -41,13 +41,13 @@ const graphToProlly = async () => {
 
 const graphToHamt = async () => {
     console.log('Hamt storage')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await hamtStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
     createGraph(gw)
-    const h = await history()
-    const s1 = await hamtStorage(h)
-    const roots = await gw.commit(s1)
+    const roots = await gw.commit()
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     //await s1.showBlocks(roots)
@@ -57,7 +57,7 @@ const graphToHamt = async () => {
     console.log(`Blocks count1 ${count1}`)
     const gw2 = g.writer()
     updateGraph(g, gw2)
-    const roots2 = await gw2.commit(s1)
+    const roots2 = await gw2.commit()
     //await s1.showBlocks(roots2)
     const size2 = await s1.size(roots2)
     const count2 = await s1.count(roots2)
@@ -71,13 +71,13 @@ const graphToHamt = async () => {
 
 const largerGraphToProlly = async () => {
     console.log('Prolly storage - larger')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await prollyStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
     createLargerGraph(gw)
-    const h = await history()
-    const s1 = await prollyStorage(h)
-    const blockResult1 = await gw.commit(s1)
+    const blockResult1 = await gw.commit()
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     //await s1.showBlocks(blockResult1)
@@ -86,9 +86,9 @@ const largerGraphToProlly = async () => {
     console.log(`Blocks size1 ${(size1 / (1024)).toFixed(2)} KB`)
     console.log(`Blocks count1 ${count1}`)
     const gw2 = g.writer()
-    const root = g.getRoot();
+    const root = await g.getRoot();
     updateLargerGraph(root, gw2)
-    const blockResult2 = await gw2.commit(s1)
+    const blockResult2 = await gw2.commit()
     //await s1.showBlocks(blockResult2)
     const size2 = await s1.size(blockResult2)
     const count2 = await s1.count(blockResult2)
@@ -104,13 +104,13 @@ const largerGraphToProlly = async () => {
 
 const largerGraphToHamt = async () => {
     console.log('Hamt storage - larger')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await hamtStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
     createLargerGraph(gw)
-    const h = await history()
-    const s1 = await hamtStorage(h)
-    const roots = await gw.commit(s1)
+    const roots = await gw.commit()
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     //await s1.showBlocks(roots)
@@ -119,9 +119,9 @@ const largerGraphToHamt = async () => {
     console.log(`Blocks size1 ${(size1 / (1024)).toFixed(2)} KB`)
     console.log(`Blocks count1 ${count1}`)
     const gw2 = g.writer()
-    const root = g.getRoot();
+    const root = await g.getRoot();
     updateLargerGraph(root, gw2)
-    const roots2 = await gw2.commit(s1)
+    const roots2 = await gw2.commit()
     //await s1.showBlocks(roots2)
     const size2 = await s1.size(roots2)
     const count2 = await s1.count(roots2)
@@ -135,13 +135,13 @@ const largerGraphToHamt = async () => {
 
 const largerGraphToVector = async () => {
     console.log('Vector storage - larger')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await vectorStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
     createLargerGraph(gw)
-    const h = await history()
-    const s1 = await vectorStorage(h)
-    const roots = await gw.commit(s1)
+    const roots = await gw.commit()
     const end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     //await s1.showBlocks(roots)
@@ -150,9 +150,9 @@ const largerGraphToVector = async () => {
     console.log(`Blocks size1 ${(size1 / (1024)).toFixed(2)} KB`)
     console.log(`Blocks count1 ${count1}`)
     const gw2 = g.writer()
-    const root = g.getRoot();
+    const root = await g.getRoot();
     updateLargerGraph(root, gw2)
-    const roots2 = await gw2.commit(s1)
+    const roots2 = await gw2.commit()
     //await s1.showBlocks(roots2)
     const size2 = await s1.size(roots2)
     const count2 = await s1.count(roots2)
@@ -164,20 +164,19 @@ const largerGraphToVector = async () => {
 }
 
 const graphReaderProlly = async (path, select) => {
-
     console.log('Prolly storage - larger')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await prollyStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     let start = new Date()
     createLargerGraph(gw)
-    const h = await history()
-    const s1 = await prollyStorage(h)
-    const blockResult1 = await gw.commit(s1)
+    const blockResult1 = await gw.commit()
     //await s1.showBlocks(blockResult1)
     let end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     start = new Date()
-    const reader = new GraphReader(s1)
+    const reader = g.reader()
     const results = await reader.read(path, select)
     for await (const result of results) {
         console.log('---Found---')
@@ -188,20 +187,19 @@ const graphReaderProlly = async (path, select) => {
 }
 
 const graphReaderHamt = async (path, select) => {
-
     console.log('Hamt storage - larger')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await hamtStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     let start = new Date()
     createLargerGraph(gw)
-    const h = await history()
-    const s1 = await hamtStorage(h)
-    const blockResult1 = await gw.commit(s1)
+    const blockResult1 = await gw.commit()
     //await s1.showBlocks(blockResult1)
     let end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     start = new Date()
-    const reader = new GraphReader(s1)
+    const reader =  g.reader()
     const results = await reader.read(path, select)
     for await (const result of results) {
         console.log('---Found---')
@@ -212,20 +210,19 @@ const graphReaderHamt = async (path, select) => {
 }
 
 const graphReaderVector = async (path, select) => {
-
     console.log('Vector storage - larger')
-    const g = new Graph()
+    const h = await history()
+    const s1 = await vectorStorage(h)
+    const g = new Graph(s1)
     const gw = g.writer()
     let start = new Date()
     createLargerGraph(gw)
-    const h = await history()
-    const s1 = await vectorStorage(h)
-    const blockResult1 = await gw.commit(s1)
+    const blockResult1 = await gw.commit()
     //await s1.showBlocks(blockResult1)
     let end = new Date()
     console.log(`Insert duration ${end - start} ms`)
     start = new Date()
-    const reader = new GraphReader(s1)
+    const reader =  g.reader()
     const results = await reader.read(path, select)
     for await (const result of results) {
         console.log('---Found---')

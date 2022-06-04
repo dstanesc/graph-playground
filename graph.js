@@ -1,24 +1,32 @@
 class Graph {
 
-    constructor() {
+    constructor({ nodeGet, rlshpGet, propGet, storageCommit }) {
         this.nodes = []
         this.rlshps = []
         this.props = []
         this.nodeOffset = 0
         this.rlshpOffset = 0
         this.propOffset = 0
+        this.nodeGet = nodeGet
+        this.rlshpGet = rlshpGet
+        this.propGet = propGet
+        this.storageCommit = storageCommit
     }
 
     writer() {
-        return new GraphWriter(this, this.nodeOffset, this.rlshpOffset, this.propOffset)
+        return new GraphWriter(this)
     }
 
-    getRoot() {
-        return this.getNode(0)
+    reader() {
+        return new GraphReader(this)
     }
 
-    getNode(index) {
-        return Node.fromJson(this.nodes[index])
+    async getRoot() {
+        return await this.getNode('0')
+    }
+
+    async getNode(offset) {
+        return await this.reader().getNode(offset)
     }
 }
 
@@ -29,22 +37,38 @@ class SearchCompleted {
 
 class GraphReader {
 
-    constructor({ nodeGet, rlshpGet, propGet }) {
-        this.nodeGet = nodeGet
-        this.rlshpGet = rlshpGet
-        this.propGet = propGet
+    constructor(graph) {
+        this.graph = graph
     }
 
     async getNode(offset) {
-        return await this.nodeGet(offset)
+        if (this.graph.nodes[offset] !== undefined)
+            return this.graph.nodes[offset]
+        else {
+            const node = await graph.nodeGet(offset)
+            this.graph.nodes[offset] = node
+            return node
+        }
     }
 
     async getRlshp(offset) {
-        return await this.rlshpGet(offset)
+        if (this.graph.rlshps[offset] !== undefined)
+            return this.graph.rlshps[offset]
+        else {
+            const rlshp = await graph.rlshpGet(offset)
+            this.graph.rlshps[offset] = rlshp
+            return rlshp
+        }
     }
 
     async getProp(offset) {
-        return await this.propGet(offset)
+        if (this.graph.props[offset] !== undefined)
+            return this.graph.props[offset]
+        else {
+            const prop = await graph.propGet(offset)
+            this.graph.props[offset] = prop
+            return prop
+        }
     }
 
     async * read(path, select) {
@@ -143,7 +167,7 @@ class GraphReader {
 
 class GraphWriter {
 
-    constructor(graph, nodeOffset, rlshpOffset, propOffset) {
+    constructor(graph) {
         this.graph = graph
         this.nodesAdded = []
         this.rlshpsAdded = []
@@ -151,12 +175,12 @@ class GraphWriter {
         this.nodesRemoved = []
         this.rlshpsRemoved = []
         this.propsRemoved = []
-        this.nodeOffset = nodeOffset
-        this.rlshpOffset = rlshpOffset
-        this.propOffset = propOffset
-        this.initNodeOffset = nodeOffset
-        this.initRlshpOffset = rlshpOffset
-        this.initPropOffset = propOffset
+        this.nodeOffset = graph.nodeOffset
+        this.rlshpOffset = graph.rlshpOffset
+        this.propOffset = graph.propOffset
+        this.initNodeOffset = graph.nodeOffset
+        this.initRlshpOffset = graph.rlshpOffset
+        this.initPropOffset = graph.propOffset
     }
 
     nextNodeOffset() {
@@ -202,9 +226,9 @@ class GraphWriter {
         this.propsRemoved.push(offset)
     }
 
-    async commit({ storageCommit }) {
+    async commit() {
 
-        const commitResult = await storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded)
+        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded)
 
         this.graph.nodes.push(...this.nodesAdded)
         this.graph.rlshps.push(...this.rlshpsAdded)
@@ -218,7 +242,7 @@ class GraphWriter {
         this.nodesRemoved = []
         this.rlshpsRemoved = []
         this.propsRemoved = []
-        
+
         return commitResult
     }
 

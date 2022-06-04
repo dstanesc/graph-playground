@@ -24,28 +24,28 @@ creationSuite.on('cycle', event => {
 
 creationSuite
     .add('Prolly Graph Creation', async () => {
-      const g = new Graph()
-      const gw = g.writer()
-      const r = gw.addNode("root")
       const h = await history()
       const s1 = await prollyStorage(h)
-      const blockResult1 = await gw.commit(s1)
+      const g = new Graph(s1)
+      const gw = g.writer()
+      const r = gw.addNode("root")
+      const blockResult1 = await gw.commit()
     })
     .add('Hamt Graph Creation', async () => {
-      const g = new Graph()
-      const gw = g.writer()
-      const r = gw.addNode("root")
       const h = await history()
       const s1 = await hamtStorage(h)
-      const blockResult1 = await gw.commit(s1)
-    })
-    .add('Vector Graph Creation', async () => {
-      const g = new Graph()
+      const g = new Graph(s1)
       const gw = g.writer()
       const r = gw.addNode("root")
+      const blockResult1 = await gw.commit()
+    })
+    .add('Vector Graph Creation', async () => {
       const h = await history()
       const s1 = await vectorStorage(h)
-      const blockResult1 = await gw.commit(s1)
+      const g = new Graph(s1)
+      const gw = g.writer()
+      const r = gw.addNode("root")
+      const blockResult1 = await gw.commit()
     })
     .run()
 

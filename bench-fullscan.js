@@ -10,36 +10,33 @@ import { history } from './history.js'
 
 
 const s1 = async () => {
-  const g = new Graph()
-  const gw = g.writer()
-  let start = new Date()
-  createLargerGraph(gw)
   const h = await history()
   const s1 = await vectorStorage(h)
-  await gw.commit(s1)
-  return s1
+  const g = new Graph(s1)
+  const gw = g.writer()
+  createLargerGraph(gw)
+  await gw.commit()
+  return g
 }
 
 const s2 = async () => {
-  const g = new Graph()
-  const gw = g.writer()
-  let start = new Date()
-  createLargerGraph(gw)
   const h = await history()
   const s1 = await prollyStorage(h)
-  await gw.commit(s1)
-  return s1
+  const g = new Graph(s1)
+  const gw = g.writer()
+  createLargerGraph(gw)
+  await gw.commit()
+  return g
 }
 
 const s3 = async () => {
-  const g = new Graph()
-  const gw = g.writer()
-  let start = new Date()
-  createLargerGraph(gw)
   const h = await history()
   const s1 = await hamtStorage(h)
-  await gw.commit(s1)
-  return s1
+  const g = new Graph(s1)
+  const gw = g.writer()
+  createLargerGraph(gw)
+  await gw.commit()
+  return g
 }
 
 
@@ -66,10 +63,12 @@ sx().then(s => {
     console.log(benchmark.toString());
   });
 
+
+  //FIXME Order affects run performance (first always best)
   querySuite
 
     .add('Vector Reading', async () => {
-      const reader = new GraphReader(s.v)
+      const reader = s.v.reader()
       const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
@@ -78,7 +77,7 @@ sx().then(s => {
     })
 
     .add('Prolly Reading', async () => {
-      const reader = new GraphReader(s.p)
+      const reader = s.p.reader()
       const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
@@ -87,7 +86,7 @@ sx().then(s => {
     })
 
     .add('Hamt Reading', async () => {
-      const reader = new GraphReader(s.h)
+      const reader = s.h.reader()
       const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')

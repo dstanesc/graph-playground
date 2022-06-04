@@ -46,11 +46,12 @@ const createGraph = (gw) => {
     return gw
 }
 
-const updateGraph = (g, gw) => {
+const updateGraph = async (g, gw) => {
     const k10 = gw.addNode("literature")
     const k11 = gw.addNode("993")
     k11.addProp(gw, 'firstname', 'Louise').addProp(gw, 'surname', 'Glück')
-    const r20 = g.getNode(9).addRlshp(gw, "category", k10)
+    const n9 = await g.getNode(9)
+    const r20 = n9.addRlshp(gw, "category", k10)
     const r21 = k10.addRlshp(gw, "laureates", k11)
     return gw
 }
