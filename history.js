@@ -24,7 +24,7 @@ const history = async () => {
         const currentOffset = (await map.size()) - 1
         let commit
         if (currentOffset === -1)
-            commit = { offset: '0', nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, prevOffset: undefined}
+            commit = { offset: '0', nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, prevOffset: '-1'}
         else
             commit = await map.get(currentOffset.toString())
         return commit

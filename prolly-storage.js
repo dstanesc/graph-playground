@@ -4,7 +4,7 @@ import { create, load } from 'prolly-trees/map'
 import { bf, simpleCompare as compare } from 'prolly-trees/utils'
 import { nocache, global as globalCache } from 'prolly-trees/cache'
 import { blockStorage } from './block-storage.js'
-import {Node, Rlshp, Prop} from './graph.js'
+import { Node, Rlshp, Prop } from './graph.js'
 
 const chunker = bf(3)
 
@@ -17,8 +17,8 @@ const prollyStorage = async history => {
     const nodeStore = blockStorage()
     const rlshpStore = nodeStore
     const propStore = nodeStore
-    
-    let { offset, nodesRoot, rlshpsRoot, propsRoot } = await history.current()
+
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, prevOffset } = await history.current()
 
     const nodesCreate = async (nodes) => {
         const list = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
@@ -68,19 +68,19 @@ const prollyStorage = async history => {
 
     const nodeGet = async offset => {
         const actualRoot = await loadNodesRoot(nodesRoot)
-        const {result: value} = await actualRoot.get(offset.toString())
+        const { result: value } = await actualRoot.get(offset.toString())
         return Node.fromJson(value)
     }
 
     const rlshpGet = async offset => {
         const actualRoot = await loadRlshpsRoot(rlshpsRoot)
-        const {result: value} = await actualRoot.get(offset.toString())
+        const { result: value } = await actualRoot.get(offset.toString())
         return Rlshp.fromJson(value)
     }
 
     const propGet = async offset => {
         const actualRoot = await loadPropsRoot(propsRoot)
-        const {result: value} = await actualRoot.get(offset.toString())
+        const { result: value } = await actualRoot.get(offset.toString())
         return Prop.fromJson(value)
     }
 
@@ -100,27 +100,36 @@ const prollyStorage = async history => {
     }
 
     const nodesUpdate = async (nodes) => {
-        const bulk = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
-        const actualRoot = await loadNodesRoot(nodesRoot)
-        const { blocks, root } = await actualRoot.bulk(bulk)
-        nodesRoot = (await root.address).toString()
-        return blocks
+        if (nodes.length > 0) {
+            const bulk = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+            const actualRoot = await loadNodesRoot(nodesRoot)
+            const { blocks, root } = await actualRoot.bulk(bulk)
+            await Promise.all(blocks.map(b => nodeStore.put(b.cid, b)))
+            nodesRoot = (await root.address).toString()
+            return blocks
+        } else return []
     }
 
     const rlshpsUpdate = async (rlshps) => {
-        const list = rlshps.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
-        const actualRoot = await loadRlshpsRoot(rlshpsRoot)
-        const { blocks, root } = await actualRoot.bulk(list)
-        rlshpsRoot = (await root.address).toString()
-        return blocks
+        if (rlshps.length > 0) {
+            const list = rlshps.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+            const actualRoot = await loadRlshpsRoot(rlshpsRoot)
+            const { blocks, root } = await actualRoot.bulk(list)
+            await Promise.all(blocks.map(b => rlshpStore.put(b.cid, b)))
+            rlshpsRoot = (await root.address).toString()
+            return blocks
+        } else return []
     }
 
     const propsUpdate = async (props) => {
-        const list = props.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
-        const actualRoot = await loadPropsRoot(propsRoot)
-        const { blocks, root } = await actualRoot.bulk(list)
-        propsRoot = (await root.address).toString()
-        return blocks
+        if (props.length > 0) {
+            const list = props.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+            const actualRoot = await loadPropsRoot(propsRoot)
+            const { blocks, root } = await actualRoot.bulk(list)
+            await Promise.all(blocks.map(b => propStore.put(b.cid, b)))
+            propsRoot = (await root.address).toString()
+            return blocks
+        } else return []
     }
 
     //FIXME log changes before distributed commit
@@ -132,14 +141,16 @@ const prollyStorage = async history => {
         if (update) {
             nodeBlocks = await nodesUpdate(nodes)
             rlshpBlocks = await rlshpsUpdate(rlshps)
-            propBlocks = propsUpdate(props)
+            propBlocks = await propsUpdate(props)
         } else {
             nodeBlocks = await nodesCreate(nodes)
             rlshpBlocks = await rlshpsCreate(rlshps)
             propBlocks = await propsCreate(props)
         }
 
-        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset})
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset })
+
+        console.log(`Storage performed`)
 
         return { nodeBlocks, rlshpBlocks, propBlocks, update }
     }

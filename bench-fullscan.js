@@ -64,7 +64,7 @@ sx().then(s => {
   });
 
 
-  //FIXME Order affects run performance (first always best)
+  //FIXME order affects run performance (first always best)
   querySuite
 
     .add('Vector Reading', async () => {

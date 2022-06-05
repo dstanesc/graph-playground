@@ -1,4 +1,4 @@
-import { Graph, GraphReader, GraphInspector } from './graph.js'
+import { Graph, GraphInspector } from './graph.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
