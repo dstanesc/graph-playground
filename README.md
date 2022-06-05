@@ -17,7 +17,7 @@ For instance if data stores are vectors of data, references are offsets in the t
 
 Node structure
 ```js
-{offset, label, nextRlshp}
+{offset, label, nextRlshp, nextProp}
 ```
 Rlshp structure
 ```js
