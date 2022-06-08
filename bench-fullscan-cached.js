@@ -1,6 +1,7 @@
 import Benchmark from 'benchmark'
 
 import { Graph, GraphReader, GraphInspector } from './graph.js'
+import { blockStorage } from './block-storage.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
@@ -10,8 +11,9 @@ import { history } from './history.js'
 
 
 const s1 = async () => {
-  const h = await history()
-  const s1 = await vectorStorage(h)
+  const s = blockStorage() 
+  const h = await history(s)
+  const s1 = await vectorStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
   createLargerGraph(gw)
@@ -20,8 +22,9 @@ const s1 = async () => {
 }
 
 const s2 = async () => {
-  const h = await history()
-  const s1 = await prollyStorage(h)
+  const s = blockStorage() 
+  const h = await history(s)
+  const s1 = await prollyStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
   createLargerGraph(gw)
@@ -30,8 +33,9 @@ const s2 = async () => {
 }
 
 const s3 = async () => {
-  const h = await history()
-  const s1 = await hamtStorage(h)
+  const s = blockStorage() 
+  const h = await history(s)
+  const s1 = await hamtStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
   createLargerGraph(gw)
@@ -46,7 +50,7 @@ const sx = async () => {
   return { g1, g2, g3 }
 }
 
-sx().then(s => {
+sx().then(su => {
 
   const querySuite = new Benchmark.Suite('Graph Full Scan Cached Compare Suite')
 
@@ -66,7 +70,7 @@ sx().then(s => {
   querySuite
 
     .add('Hamt Reading Cached', async () => {
-      const reader = s.g3.reader()
+      const reader = su.g3.reader()
       const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
@@ -75,7 +79,7 @@ sx().then(s => {
     })
 
     .add('Vector Reading Cached', async () => {
-      const reader = s.g1.reader()
+      const reader = su.g1.reader()
       const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
@@ -84,7 +88,7 @@ sx().then(s => {
     })
 
     .add('Prolly Reading Cached', async () => {
-      const reader = s.g2.reader()
+      const reader = su.g2.reader()
       const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')

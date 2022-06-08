@@ -2,7 +2,7 @@ import { create, load } from 'ipld-hashmap'
 import { blockStorage } from './block-storage.js'
 import { sha256 as blockHasher } from 'multiformats/hashes/sha2'
 import * as blockCodec from '@ipld/dag-cbor'
-import {Node, Rlshp, Prop} from './graph.js'
+import { Node, Rlshp, Prop } from './graph.js'
 
 // - bitWidth (number, default 8) - The number of bits to extract from the hash to form a data element index at each level of the Map, e.g. a bitWidth of 5 will extract 5 bits to be used as the data element index, since 2^5=32, each node will store up to 32 data elements (child nodes and/or entry buckets). The maximum depth of the Map is determined by floor((hashBytes * 8) / bitWidth) where hashBytes is the number of bytes the hash function produces, e.g. hashBytes=32 and bitWidth=5 yields a maximum depth of 51 nodes. The maximum bitWidth currently allowed is 8 which will store 256 data elements in each node.
 
@@ -17,11 +17,11 @@ class Block {
     }
 }
 
-const hamtStorage = async history => {
+const hamtStorage = async (history, blockStore) => {
 
-    const nodeStore = blockStorage()
-    const rlshpStore = nodeStore
-    const propStore = nodeStore
+    const nodeStore = blockStore
+    const rlshpStore = blockStore
+    const propStore = blockStore
 
     let { offset, nodesRoot, rlshpsRoot, propsRoot } = await history.current()
 
@@ -80,7 +80,7 @@ const hamtStorage = async history => {
         rlshpsRoot = rlshpMap.cid
         propsRoot = propMap.cid
 
-        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset})
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset })
 
         return roots()
     }
@@ -185,7 +185,7 @@ const hamtStorage = async history => {
         return c
     }
 
-    return { nodeStore, rlshpStore, propStore, storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
+    return { storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
 }
 
 

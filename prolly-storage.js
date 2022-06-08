@@ -12,11 +12,11 @@ const cache = globalCache
 
 const opts = { cache, chunker, codec, hasher }
 
-const prollyStorage = async history => {
+const prollyStorage = async (history, blockStore) => {
 
-    const nodeStore = blockStorage()
-    const rlshpStore = nodeStore
-    const propStore = nodeStore
+    const nodeStore = blockStore
+    const rlshpStore = blockStore
+    const propStore = blockStore
 
     let { offset, nodesRoot, rlshpsRoot, propsRoot, prevOffset } = await history.current()
 
@@ -150,8 +150,6 @@ const prollyStorage = async history => {
 
         offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset })
 
-        console.log(`Storage performed`)
-
         return { nodeBlocks, rlshpBlocks, propBlocks, update }
     }
 
@@ -236,7 +234,7 @@ const prollyStorage = async history => {
         return { percentNodes, percentRlshp, percentProps }
     }
 
-    return { nodeStore, rlshpStore, propStore, nodesRoot, rlshpsRoot, propsRoot, storageCommit, showBlocks, showStoredBlocks, size, count, percent, nodeGet, rlshpGet, propGet }
+    return { nodesRoot, rlshpsRoot, propsRoot, storageCommit, showBlocks, showStoredBlocks, size, count, percent, nodeGet, rlshpGet, propGet }
 }
 
 export { prollyStorage }

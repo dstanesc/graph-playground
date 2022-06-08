@@ -1,6 +1,7 @@
 import Benchmark from 'benchmark'
 
 import { Graph, GraphReader, GraphInspector } from './graph.js'
+import { blockStorage } from './block-storage.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
@@ -10,8 +11,9 @@ import { history } from './history.js'
 
 
 const s1 = async () => {
-  const h = await history()
-  const s1 = await vectorStorage(h)
+  const s = blockStorage() 
+  const h = await history(s)
+  const s1 = await vectorStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
   createLargerGraph(gw)
@@ -20,8 +22,9 @@ const s1 = async () => {
 }
 
 const s2 = async () => {
-  const h = await history()
-  const s1 = await prollyStorage(h)
+  const s = blockStorage() 
+  const h = await history(s)
+  const s1 = await prollyStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
   createLargerGraph(gw)
@@ -30,8 +33,9 @@ const s2 = async () => {
 }
 
 const s3 = async () => {
-  const h = await history()
-  const s1 = await hamtStorage(h)
+  const s = blockStorage() 
+  const h = await history(s)
+  const s1 = await hamtStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
   createLargerGraph(gw)
@@ -47,7 +51,7 @@ const sx = async () => {
   return { v, p, h }
 }
 
-sx().then(s => {
+sx().then(su => {
 
   const querySuite = new Benchmark.Suite('Graph Quick Scan Suite')
 
@@ -67,7 +71,7 @@ sx().then(s => {
   querySuite
 
     .add('Vector Reading', async () => {
-      const reader = s.v.reader()
+      const reader = su.v.reader()
       const results = await reader.read([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
@@ -76,7 +80,7 @@ sx().then(s => {
     })
 
     .add('Prolly Reading', async () => {
-      const reader = s.p.reader()
+      const reader = su.p.reader()
       const results = await reader.read([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')
@@ -85,7 +89,7 @@ sx().then(s => {
     })
 
     .add('Hamt Reading', async () => {
-      const reader = s.h.reader()
+      const reader = su.h.reader()
       const results = await reader.read([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')

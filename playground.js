@@ -1,4 +1,5 @@
 import { Graph, GraphInspector } from './graph.js'
+import { blockStorage } from './block-storage.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
@@ -8,8 +9,9 @@ import { history } from './history.js'
 
 const graphToProlly = async () => {
     console.log('Prolly storage')
-    const h = await history()
-    const s1 = await prollyStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await prollyStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
@@ -41,8 +43,9 @@ const graphToProlly = async () => {
 
 const graphToHamt = async () => {
     console.log('Hamt storage')
-    const h = await history()
-    const s1 = await hamtStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await hamtStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
@@ -71,8 +74,9 @@ const graphToHamt = async () => {
 
 const largerGraphToProlly = async () => {
     console.log('Prolly storage - larger')
-    const h = await history()
-    const s1 = await prollyStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await prollyStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
@@ -104,8 +108,9 @@ const largerGraphToProlly = async () => {
 
 const largerGraphToHamt = async () => {
     console.log('Hamt storage - larger')
-    const h = await history()
-    const s1 = await hamtStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await hamtStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
@@ -135,8 +140,9 @@ const largerGraphToHamt = async () => {
 
 const largerGraphToVector = async () => {
     console.log('Vector storage - larger')
-    const h = await history()
-    const s1 = await vectorStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await vectorStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     const start = new Date()
@@ -165,8 +171,9 @@ const largerGraphToVector = async () => {
 
 const graphReaderProlly = async (path, select) => {
     console.log('Prolly storage - larger')
-    const h = await history()
-    const s1 = await prollyStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await prollyStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     let start = new Date()
@@ -188,8 +195,9 @@ const graphReaderProlly = async (path, select) => {
 
 const graphReaderHamt = async (path, select) => {
     console.log('Hamt storage - larger')
-    const h = await history()
-    const s1 = await hamtStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await hamtStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     let start = new Date()
@@ -211,8 +219,9 @@ const graphReaderHamt = async (path, select) => {
 
 const graphReaderVector = async (path, select) => {
     console.log('Vector storage - larger')
-    const h = await history()
-    const s1 = await vectorStorage(h)
+    const s = blockStorage() 
+    const h = await history(s)
+    const s1 = await vectorStorage(h, s)
     const g = new Graph(s1)
     const gw = g.writer()
     let start = new Date()

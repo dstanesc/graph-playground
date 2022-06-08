@@ -1,6 +1,7 @@
 import Benchmark from 'benchmark'
 
 import { Graph, GraphReader, GraphInspector } from './graph.js'
+import { blockStorage } from './block-storage.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
@@ -24,24 +25,27 @@ creationSuite.on('cycle', event => {
 
 creationSuite
     .add('Prolly Graph Creation', async () => {
-      const h = await history()
-      const s1 = await prollyStorage(h)
+      const s = blockStorage() 
+      const h = await history(s)
+      const s1 = await prollyStorage(h, s)
       const g = new Graph(s1)
       const gw = g.writer()
       const r = gw.addNode("root")
       const blockResult1 = await gw.commit()
     })
     .add('Hamt Graph Creation', async () => {
-      const h = await history()
-      const s1 = await hamtStorage(h)
+      const s = blockStorage() 
+      const h = await history(s)
+      const s1 = await hamtStorage(h, s)
       const g = new Graph(s1)
       const gw = g.writer()
       const r = gw.addNode("root")
       const blockResult1 = await gw.commit()
     })
     .add('Vector Graph Creation', async () => {
-      const h = await history()
-      const s1 = await vectorStorage(h)
+      const s = blockStorage() 
+      const h = await history(s)
+      const s1 = await vectorStorage(h, s)
       const g = new Graph(s1)
       const gw = g.writer()
       const r = gw.addNode("root")

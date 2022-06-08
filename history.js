@@ -5,9 +5,7 @@ import * as blockCodec from '@ipld/dag-cbor'
 
 const opts = { bitWidth: 4, bucketSize: 3, blockHasher, blockCodec }
 
-const history = async () => {
-
-    const blockStore = blockStorage()
+const history = async (blockStore) => {
 
     let root
 
@@ -64,7 +62,7 @@ const history = async () => {
         return root !== undefined ? await load(blockStore, root, opts) : await create(blockStore, opts)
     }
 
-    return { root, blockStore, push, current, navigate, size, show }
+    return { root, push, current, navigate, size, show }
 }
 
 export { history }

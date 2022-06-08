@@ -14,11 +14,11 @@ class Block {
     }
 }
 
-const vectorStorage = async history => {
+const vectorStorage = async (history, blockStore) => {
 
-    const nodeStore = blockStorage()
-    const rlshpStore = nodeStore
-    const propStore = nodeStore
+    const nodeStore = blockStore
+    const rlshpStore = blockStore
+    const propStore = blockStore
 
     let { offset, nodesRoot, rlshpsRoot, propsRoot, prevOffset } = await history.current()
 
@@ -184,7 +184,7 @@ const vectorStorage = async history => {
         return c
     }
 
-    return { nodeStore, rlshpStore, propStore, storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
+    return {storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
 }
 
 
