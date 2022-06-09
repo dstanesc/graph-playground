@@ -18,7 +18,7 @@ const prollyStorage = async (history, blockStore) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, prevOffset } = await history.current()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.current()
 
     const nodesCreate = async (nodes) => {
         const list = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
@@ -133,7 +133,7 @@ const prollyStorage = async (history, blockStore) => {
     }
 
     //FIXME log changes before distributed commit
-    const storageCommit = async (nodes, rlshps, props) => {
+    const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset) => {
         let nodeBlocks
         let rlshpBlocks
         let propBlocks
@@ -148,33 +148,13 @@ const prollyStorage = async (history, blockStore) => {
             propBlocks = await propsCreate(props)
         }
 
-        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset })
+        nodeOffset = nOffset
+        rlshpOffset = rOffset
+        propOffset = pOffset
+
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset: offset })
 
         return { nodeBlocks, rlshpBlocks, propBlocks, update }
-    }
-
-    const showStoredBlocks = async () => {
-        let sum = 0
-        console.log('---')
-        for await (const cid of Object.keys(nodeStore.blocks)) {
-            const block = nodeStore.blocks[cid];
-            sum += block.bytes.length
-            console.log(`Nodes block: ${cid.toString()} ${block.bytes.length} bytes`);
-        }
-        console.log('---')
-        for await (const cid of Object.keys(rlshpStore.blocks)) {
-            const block = rlshpStore.blocks[cid];
-            sum += block.bytes.length
-            console.log(`Rlshp block: ${cid.toString()} ${block.bytes.length} bytes`);
-        }
-        console.log('---')
-        for await (const cid of Object.keys(propStore.blocks)) {
-            const block = propStore.blocks[cid];
-            sum += block.bytes.length
-            console.log(`Prop block: ${cid.toString()} ${block.bytes.length} bytes`);
-        }
-        console.log('---')
-        console.log(`Total stored size ${(sum / (1024)).toFixed(2)} KB`);
     }
 
     const showBlocks = async ({ nodeBlocks, rlshpBlocks, propBlocks, update }) => {
@@ -227,14 +207,8 @@ const prollyStorage = async (history, blockStore) => {
         return c
     }
 
-    const percent = async ({ nodeBlocks, rlshpBlocks, propBlocks }) => {
-        const percentNodes = (((await nodeBlocks).length / nodeStore.size()) * 100).toFixed(2)
-        const percentRlshp = (((await rlshpBlocks).length / rlshpStore.size()) * 100).toFixed(2)
-        const percentProps = (((await propBlocks).length / propStore.size()) * 100).toFixed(2)
-        return { percentNodes, percentRlshp, percentProps }
-    }
 
-    return { nodesRoot, rlshpsRoot, propsRoot, storageCommit, showBlocks, showStoredBlocks, size, count, percent, nodeGet, rlshpGet, propGet }
+    return { nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, storageCommit, showBlocks, size, count, nodeGet, rlshpGet, propGet }
 }
 
 export { prollyStorage }

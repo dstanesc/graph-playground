@@ -1,12 +1,12 @@
 class Graph {
 
-    constructor({ nodeGet, rlshpGet, propGet, storageCommit }) {
+    constructor({ nodeGet, rlshpGet, propGet, nodeOffset, rlshpOffset, propOffset, storageCommit }) {
         this.nodes = []
         this.rlshps = []
         this.props = []
-        this.nodeOffset = 0
-        this.rlshpOffset = 0
-        this.propOffset = 0
+        this.nodeOffset = nodeOffset
+        this.rlshpOffset = rlshpOffset
+        this.propOffset = propOffset
         this.nodeGet = nodeGet
         this.rlshpGet = rlshpGet
         this.propGet = propGet
@@ -28,6 +28,14 @@ class Graph {
     async getNode(offset) {
         return await this.reader().getNode(offset)
     }
+
+    async getRlshp(offset) {
+        return await this.reader().getRlshp(offset)
+    }
+
+    async getProp(offset) {
+        return await this.reader().getProp(offset)
+    }
 }
 
 class SearchCompleted {
@@ -45,7 +53,7 @@ class GraphReader {
         if (this.graph.nodes[offset] !== undefined)
             return this.graph.nodes[offset]
         else {
-            const node = await graph.nodeGet(offset)
+            const node = await this.graph.nodeGet(offset)
             this.graph.nodes[offset] = node
             return node
         }
@@ -228,7 +236,9 @@ class GraphWriter {
 
     async commit() {
 
-        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded)
+        console.log(`commiting nodeOffset ${this.nodeOffset.toString()} rlshpOffset  ${this.rlshpOffset.toString()} propOffset ${this.propOffset.toString()}`)
+
+        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset.toString(), this.rlshpOffset.toString(), this.propOffset.toString())
 
         this.graph.nodes.push(...this.nodesAdded)
         this.graph.rlshps.push(...this.rlshpsAdded)
@@ -246,21 +256,21 @@ class GraphWriter {
         return commitResult
     }
 
-    getRlshp(offset) {
+    async getRlshp(offset) {
         let rlshp
         if (offset >= this.initRlshpOffset)
             rlshp = this.rlshpsAdded[offset - this.initRlshpOffset]
         else
-            rlshp = this.graph.rlshps[offset]
+            rlshp = await this.graph.getRlshp(offset)
         return rlshp
     }
 
-    getProp(offset) {
+    async getProp(offset) {
         let prop
         if (offset >= this.initPropOffset)
             prop = this.propsAdded[offset - this.initPropOffset]
         else
-            prop = this.graph.props[offset]
+            prop = await this.graph.getProp(offset)
         return prop
     }
 }
@@ -290,12 +300,14 @@ class Rlshp {
         return json
     }
 
-    addRlshp(graphWriter, rlshp) {
+    async addRlshp(graphWriter, rlshp) {
         if (this.firstNextRel === undefined) {
             this.firstNextRel = rlshp.offset
             rlshp.firstPrevRel = this.firstNextRel
-        } else
-            graphWriter.getRlshp(this.firstNextRel).addRlshp(graphWriter, rlshp)
+        } else {
+            const firstNext = await graphWriter.getRlshp(this.firstNextRel)
+            firstNext.addRlshp(graphWriter, rlshp)
+        }
     }
 
     static fromJson(json) {
@@ -317,22 +329,24 @@ class Node {
     }
 
 
-    addRlshp(graphWriter, label, node) {
+    async addRlshp(graphWriter, label, node) {
         const rlshp = new Rlshp(graphWriter.nextRlshpOffset(), label, this.offset, node.offset)
         if (this.nextRlshp !== undefined) {
-            graphWriter.getRlshp(this.nextRlshp).addRlshp(graphWriter, rlshp)
+            const next = await graphWriter.getRlshp(this.nextRlshp)
+            await next.addRlshp(graphWriter, rlshp)
         } else
             this.nextRlshp = rlshp.offset
         graphWriter.addRlshp(rlshp)
         return rlshp
     }
 
-    addProp(graphWriter, propName, propValue) {
+    async addProp(graphWriter, propName, propValue) {
         if (propName !== undefined && propValue !== undefined) {
             const prop = new Prop(graphWriter.nextPropOffset(), propName, propValue)
-            if (this.nextProp !== undefined)
-                graphWriter.getProp(this.nextProp).addProp(graphWriter, prop)
-            else
+            if (this.nextProp !== undefined){
+                const next = await graphWriter.getProp(this.nextProp)
+                next.addProp(graphWriter, prop)
+            } else
                 this.nextProp = prop.offset
             graphWriter.addProp(prop)
         }
@@ -370,11 +384,13 @@ class Prop {
         this.nextProp = nextProp
     }
 
-    addProp(graphWriter, prop) {
+    async addProp(graphWriter, prop) {
         if (this.nextProp === undefined)
             this.nextProp = prop.offset
-        else
-            graphWriter.getProp(this.nextProp).addProp(graphWriter, prop)
+        else{
+            const next = await graphWriter.getProp(this.nextProp)
+            next.addProp(graphWriter, prop)
+        }
         return this
     }
 

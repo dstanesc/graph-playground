@@ -1,6 +1,6 @@
 
-const blockStorage = () => {
-    const blocks = {}
+const blockStorage = otherBlocks => {
+    const blocks = Object.assign({}, otherBlocks);
     const put = (cid, block) => {
         if (blocks[cid.toString()]) {
             //console.log(`Block exists ${cid.toString}`);

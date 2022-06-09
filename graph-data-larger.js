@@ -3,7 +3,7 @@ import { Graph, GraphWriter, GraphInspector } from './graph.js'
 import nobel from './nobel.js'
 
 //https://api.nobelprize.org/v1/prize.json
-const createLargerGraph = (gw) => {
+const createLargerGraph = async (gw) => {
 
     const root = gw.addNode("root")
     const years = new Map()
@@ -16,7 +16,7 @@ const createLargerGraph = (gw) => {
         } else {
             year = gw.addNode(prize.year)
             years.set(prize.year, year)
-            root.addRlshp(gw, "year", year)
+            await root.addRlshp(gw, "year", year)
         }
         let category
         if (yearCategories.has(prize.year + '_' + prize.category)) {
@@ -24,26 +24,29 @@ const createLargerGraph = (gw) => {
         } else {
             category = gw.addNode(prize.category)
             yearCategories.set(prize.year + '_' + prize.category, category)
-            year.addRlshp(gw, 'category', category)
+            await year.addRlshp(gw, 'category', category)
         }
         if (prize.laureates !== undefined) {
             for (const l of prize.laureates) {
                 const laureate = gw.addNode(l.id)
-                laureate.addProp(gw, 'firstname', l.firstname).addProp(gw, 'surname', l.surname).addProp(gw, 'motivation', l.motivation)
-                category.addRlshp(gw, 'laureates', laureate)
+                await laureate.addProp(gw, 'firstname', l.firstname)
+                await laureate.addProp(gw, 'surname', l.surname)
+                await laureate.addProp(gw, 'motivation', l.motivation)
+                await category.addRlshp(gw, 'laureates', laureate)
             }
         }
     }
 }
 
-const updateLargerGraph = (root, gw) => {
+const updateLargerGraph = async (root, gw) => {
     const y2022 = gw.addNode("2022")
     const peace = gw.addNode("peace")
     const laureate = gw.addNode("3030")
-    laureate.addProp(gw, 'firstname', 'undisclosed').addProp(gw, 'surname', 'undisclosed')
-    peace.addRlshp(gw, 'laureates', laureate)
-    y2022.addRlshp(gw, 'category', peace)
-    root.addRlshp(gw, 'year', y2022)
+    await laureate.addProp(gw, 'firstname', 'undisclosed')
+    await laureate.addProp(gw, 'surname', 'undisclosed')
+    await peace.addRlshp(gw, 'laureates', laureate)
+    await y2022.addRlshp(gw, 'category', peace)
+    await root.addRlshp(gw, 'year', y2022)
 }
 
 export { createLargerGraph, updateLargerGraph } 

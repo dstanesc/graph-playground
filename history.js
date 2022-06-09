@@ -9,10 +9,10 @@ const history = async (blockStore) => {
 
     let root
 
-    const push = async ({ nodesRoot, rlshpsRoot, propsRoot, prevOffset }) => {
+    const push = async ({ nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset }) => {
         const map = await getMap()
         const offset = (await map.size()).toString()
-        await  map.set(offset, { offset, nodesRoot, rlshpsRoot, propsRoot, prevOffset })
+        await  map.set(offset, { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset })
         root = map.cid
         return offset
     }
@@ -22,7 +22,7 @@ const history = async (blockStore) => {
         const currentOffset = (await map.size()) - 1
         let commit
         if (currentOffset === -1)
-            commit = { offset: '0', nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, prevOffset: '-1'}
+            commit = { offset: '0', nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, nodeOffset: '0', rlshpOffset: '0', propOffset: '0', prevOffset: '-1'}
         else
             commit = await map.get(currentOffset.toString())
         return commit
@@ -47,12 +47,15 @@ const history = async (blockStore) => {
     const show = async () => {
         console.log(`History size = ${await size()}`)
         for await (const commit of await commits()) {
-            let { offset, nodesRoot, rlshpsRoot, propsRoot, prevOffset } = await navigate(commit)
+            let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await navigate(commit)
             console.log(`History commit=${await commit}`)
             console.log(`History offset=${offset}`)
             console.log(`History nodesRoot=${nodesRoot}`)
             console.log(`History rlshpsRoot=${rlshpsRoot}`)
             console.log(`History propsRoot=${propsRoot}`)
+            console.log(`History nodeOffset=${nodeOffset}`)
+            console.log(`History rlshpOffset=${rlshpOffset}`)
+            console.log(`History propOffset=${propOffset}`)
             console.log(`History prevOffset=${prevOffset}`)
         }
         console.log('---')

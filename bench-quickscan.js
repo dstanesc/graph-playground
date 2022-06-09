@@ -16,7 +16,7 @@ const s1 = async () => {
   const s1 = await vectorStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
-  createLargerGraph(gw)
+  await createLargerGraph(gw)
   await gw.commit()
   return g
 }
@@ -27,7 +27,7 @@ const s2 = async () => {
   const s1 = await prollyStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
-  createLargerGraph(gw)
+  await createLargerGraph(gw)
   await gw.commit()
   return g
 }
@@ -38,7 +38,7 @@ const s3 = async () => {
   const s1 = await hamtStorage(h, s)
   const g = new Graph(s1)
   const gw = g.writer()
-  createLargerGraph(gw)
+  await createLargerGraph(gw)
   await gw.commit()
   return g
 }

@@ -23,32 +23,10 @@ const hamtStorage = async (history, blockStore) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot } = await history.current()
-
-    const showStoredBlocks = async () => {
-        let sum = 0
-        for await (const cid of nodeMap.cids()) {
-            const block = nodeStore.get(cid);
-            sum += block.length
-            console.log(`Nodes block: ${cid.toString()} ${block.length} bytes`);
-        }
-        console.log('---')
-        for await (const cid of rlshpMap.cids()) {
-            const block = rlshpStore.get(cid);
-            sum += block.length
-            console.log(`Rlshp block: ${cid.toString()} ${block.length} bytes`);
-        }
-        console.log('---')
-        for await (const cid of propMap.cids()) {
-            const block = propStore.get(cid);
-            sum += block.length
-            console.log(`Prop block: ${cid.toString()} ${block.length} bytes`);
-        }
-        console.log(`Total stored size ${(sum / (1024)).toFixed(2)} KB`);
-    }
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset } = await history.current()
 
     //FIXME log changes before distributed commit
-    const storageCommit = async (nodes, rlshps, props) => {
+    const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset,) => {
 
         const update = nodesRoot !== undefined
 
@@ -80,7 +58,11 @@ const hamtStorage = async (history, blockStore) => {
         rlshpsRoot = rlshpMap.cid
         propsRoot = propMap.cid
 
-        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, prevOffset: offset })
+        nodeOffset = nOffset
+        rlshpOffset = rOffset
+        propOffset = pOffset
+
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset: offset })
 
         return roots()
     }
@@ -185,7 +167,7 @@ const hamtStorage = async (history, blockStore) => {
         return c
     }
 
-    return { storageCommit, showStoredBlocks, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
+    return {nodeOffset, rlshpOffset, propOffset, storageCommit, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
 }
 
 
