@@ -51,36 +51,38 @@ npm run clean
 // bf(3), dag-cbor, sha2-256
 ---
 Prolly storage
-Insert duration 401 ms
-Blocks size1 759.70 KB
-Blocks count1 4171
-Blocks size2 766.45 KB
-Blocks count2 4209
-Block increase nodes 1.22 %
-Block increase rlshps 0.90 %
-Block increase props 0.68 %
+Insert duration 406 ms
+Blocks size1 634.36 KB
+Blocks count1 3238
+Blocks size2 640.88 KB
+Blocks count2 3271
+Block size increase 1.02 %
+Block count increase 1.01 %
+
 ---
 
 // bitWidth: 4, bucketSize: 3, blockCodec: dag-cbor, blockHasher: sha2-256
 ---
 Hamt storage
-Insert duration 3575 ms
-Blocks size1 549.18 KB
-Blocks count1 876
-Blocks size2 549.63 KB
-Blocks count2 876
+Insert duration 2885 ms
+Blocks size1 475.98 KB
+Blocks count1 785
+Blocks size2 476.38 KB
+Blocks count2 785
 Block increase 0.08 %
+
 ---
 
 // width: 4, blockCodec: dag-cbor, blockAlg: sha2-256
 ---
 Vector storage
-Insert duration 5447 ms
-Blocks size1 629.91 KB
-Blocks count1 2798
-Blocks size2 630.85 KB
-Blocks count2 2807
-Block increase 0.15 %
+Insert duration 4169 ms
+Blocks size1 533.24 KB
+Blocks count1 2141
+Blocks size2 533.84 KB
+Blocks count2 2145
+Block increase 0.11 %
+
 ---
 ```
 
