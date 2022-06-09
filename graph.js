@@ -63,7 +63,7 @@ class GraphReader {
         if (this.graph.rlshps[offset] !== undefined)
             return this.graph.rlshps[offset]
         else {
-            const rlshp = await graph.rlshpGet(offset)
+            const rlshp = await this.graph.rlshpGet(offset)
             this.graph.rlshps[offset] = rlshp
             return rlshp
         }
@@ -73,7 +73,7 @@ class GraphReader {
         if (this.graph.props[offset] !== undefined)
             return this.graph.props[offset]
         else {
-            const prop = await graph.propGet(offset)
+            const prop = await this.graph.propGet(offset)
             this.graph.props[offset] = prop
             return prop
         }
