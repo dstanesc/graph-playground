@@ -1,3 +1,4 @@
+import { CID } from 'multiformats/cid'
 import { create, load } from 'ipld-hashmap'
 import { blockStorage } from './block-storage.js'
 import { sha256 as blockHasher } from 'multiformats/hashes/sha2'
@@ -35,9 +36,9 @@ const hamtStorage = async (history, blockStore) => {
         let propMap
 
         if (update) {
-            nodeMap = await load(nodeStore, nodesRoot, opts)
-            rlshpMap = await load(rlshpStore, rlshpsRoot, opts)
-            propMap = await load(propStore, propsRoot, opts)
+            nodeMap = await load(nodeStore, CID.parse(nodesRoot), opts)
+            rlshpMap = await load(rlshpStore, CID.parse(rlshpsRoot), opts)
+            propMap = await load(propStore, CID.parse(propsRoot), opts)
         } else {
             nodeMap = await create(nodeStore, opts)
             rlshpMap = await create(rlshpStore, opts)
@@ -54,9 +55,9 @@ const hamtStorage = async (history, blockStore) => {
             await propMap.set(prop.offset.toString(), prop.toJson())
         }
 
-        nodesRoot = nodeMap.cid
-        rlshpsRoot = rlshpMap.cid
-        propsRoot = propMap.cid
+        nodesRoot = nodeMap.cid.toString()
+        rlshpsRoot = rlshpMap.cid.toString()
+        propsRoot = propMap.cid.toString()
 
         nodeOffset = nOffset
         rlshpOffset = rOffset
@@ -68,21 +69,45 @@ const hamtStorage = async (history, blockStore) => {
     }
 
     const nodeGet = async offset => {
-        const nodeMap = await load(nodeStore, nodesRoot, opts)
+        const nodeMap = await load(nodeStore, CID.parse(nodesRoot), opts)
         const value = await nodeMap.get(offset.toString())
         return Node.fromJson(value)
     }
 
     const rlshpGet = async offset => {
-        const rlshpMap = await load(rlshpStore, rlshpsRoot, opts)
+        const rlshpMap = await load(rlshpStore, CID.parse(rlshpsRoot), opts)
         const value = await rlshpMap.get(offset.toString())
         return Rlshp.fromJson(value)
     }
 
     const propGet = async offset => {
-        const propMap = await load(propStore, propsRoot, opts)
+        const propMap = await load(propStore, CID.parse(propsRoot), opts)
         const value = await propMap.get(offset.toString())
         return Prop.fromJson(value)
+    }
+
+    const nodesRootGet = () => {
+        return nodesRoot
+    }
+
+    const rlshpsRootGet = () => {
+        return rlshpsRoot
+    }
+
+    const propsRootGet = () => {
+        return propsRoot
+    }
+
+    const nodeOffsetGet = () => {
+        return nodeOffset
+    }
+
+    const rlshpOffsetGet = () => {
+        return rlshpOffset
+    }
+
+    const propOffsetGet = () => {
+        return propOffset
     }
 
     const roots = () => {
@@ -92,9 +117,9 @@ const hamtStorage = async (history, blockStore) => {
 
     const blocks = async ({ nodesRoot, rlshpsRoot, propsRoot }) => {
 
-        const nodeMap = await load(nodeStore, nodesRoot, opts)
-        const rlshpMap = await load(rlshpStore, rlshpsRoot, opts)
-        const propMap = await load(propStore, propsRoot, opts)
+        const nodeMap = await load(nodeStore, CID.parse(nodesRoot), opts)
+        const rlshpMap = await load(rlshpStore, CID.parse(rlshpsRoot), opts)
+        const propMap = await load(propStore, CID.parse(propsRoot), opts)
 
         let nodeBlocks = []
         let rlshpBlocks = []
@@ -167,7 +192,7 @@ const hamtStorage = async (history, blockStore) => {
         return c
     }
 
-    return {nodeOffset, rlshpOffset, propOffset, storageCommit, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
+    return {nodesRootGet, rlshpsRootGet, propsRootGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
 }
 
 

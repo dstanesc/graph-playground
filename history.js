@@ -1,3 +1,4 @@
+import { CID } from 'multiformats/cid'
 import { blockStorage } from './block-storage.js'
 import { create, load } from 'ipld-hashmap'
 import { sha256 as blockHasher } from 'multiformats/hashes/sha2'
@@ -5,15 +6,17 @@ import * as blockCodec from '@ipld/dag-cbor'
 
 const opts = { bitWidth: 4, bucketSize: 3, blockHasher, blockCodec }
 
-const history = async (blockStore) => {
+const history = async (blockStore, root) => {
 
-    let root
+    const rootGet = () => {
+      return root
+    }
 
     const push = async ({ nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset }) => {
         const map = await getMap()
         const offset = (await map.size()).toString()
         await  map.set(offset, { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset })
-        root = map.cid
+        root = map.cid.toString()
         return offset
     }
 
@@ -47,25 +50,17 @@ const history = async (blockStore) => {
     const show = async () => {
         console.log(`History size = ${await size()}`)
         for await (const commit of await commits()) {
-            let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await navigate(commit)
-            console.log(`History commit=${await commit}`)
-            console.log(`History offset=${offset}`)
-            console.log(`History nodesRoot=${nodesRoot}`)
-            console.log(`History rlshpsRoot=${rlshpsRoot}`)
-            console.log(`History propsRoot=${propsRoot}`)
-            console.log(`History nodeOffset=${nodeOffset}`)
-            console.log(`History rlshpOffset=${rlshpOffset}`)
-            console.log(`History propOffset=${propOffset}`)
-            console.log(`History prevOffset=${prevOffset}`)
+            let entry = await navigate(commit)
+            console.log(JSON.stringify(entry, null, 2))
         }
         console.log('---')
     }
 
     const getMap = async () => {
-        return root !== undefined ? await load(blockStore, root, opts) : await create(blockStore, opts)
+        return root !== undefined ? await load(blockStore, CID.parse(root), opts) : await create(blockStore, opts)
     }
 
-    return { root, push, current, navigate, size, show }
+    return { rootGet, push, current, navigate, size, show }
 }
 
 export { history }

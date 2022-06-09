@@ -1,12 +1,12 @@
 class Graph {
 
-    constructor({ nodeGet, rlshpGet, propGet, nodeOffset, rlshpOffset, propOffset, storageCommit }) {
+    constructor({ nodeGet, rlshpGet, propGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit }) {
         this.nodes = []
         this.rlshps = []
         this.props = []
-        this.nodeOffset = nodeOffset
-        this.rlshpOffset = rlshpOffset
-        this.propOffset = propOffset
+        this.nodeOffset = nodeOffsetGet()
+        this.rlshpOffset = rlshpOffsetGet()
+        this.propOffset = propOffsetGet()
         this.nodeGet = nodeGet
         this.rlshpGet = rlshpGet
         this.propGet = propGet
@@ -236,7 +236,7 @@ class GraphWriter {
 
     async commit() {
 
-        console.log(`commiting nodeOffset ${this.nodeOffset.toString()} rlshpOffset  ${this.rlshpOffset.toString()} propOffset ${this.propOffset.toString()}`)
+        console.log(`committing nodeOffset:${this.nodeOffset.toString()} rlshpOffset:${this.rlshpOffset.toString()} propOffset:${this.propOffset.toString()}`)
 
         const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset.toString(), this.rlshpOffset.toString(), this.propOffset.toString())
 

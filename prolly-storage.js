@@ -66,6 +66,30 @@ const prollyStorage = async (history, blockStore) => {
         return blocks
     }
 
+    const nodesRootGet = () => {
+        return nodesRoot
+    }
+
+    const rlshpsRootGet = () => {
+        return rlshpsRoot
+    }
+
+    const propsRootGet = () => {
+        return propsRoot
+    }
+
+    const nodeOffsetGet = () => {
+        return nodeOffset
+    }
+
+    const rlshpOffsetGet = () => {
+        return rlshpOffset
+    }
+
+    const propOffsetGet = () => {
+        return propOffset
+    }
+
     const nodeGet = async offset => {
         const actualRoot = await loadNodesRoot(nodesRoot)
         const { result: value } = await actualRoot.get(offset.toString())
@@ -208,7 +232,7 @@ const prollyStorage = async (history, blockStore) => {
     }
 
 
-    return { nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, storageCommit, showBlocks, size, count, nodeGet, rlshpGet, propGet }
+    return { nodesRootGet, rlshpsRootGet, propsRootGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit, showBlocks, size, count, nodeGet, rlshpGet, propGet }
 }
 
 export { prollyStorage }
