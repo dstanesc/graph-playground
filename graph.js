@@ -315,7 +315,7 @@ class Rlshp {
     }
 
     toString() {
-        return `Rlshp ${this.offset}: ${this.label} : ${this.firstNode}=>${this.secondNode}`;
+        return `Rlshp ${this.offset} ${this.label} : ${this.firstNode} => ${this.secondNode}`;
     }
 }
 
@@ -372,7 +372,7 @@ class Node {
     }
 
     toString() {
-        return `Node ${this.offset}: ${this.label} nextRlshp ${this.nextRlshp} nextProp ${this.nextProp}`;
+        return `Node ${this.offset} ${this.label} nextRlshp:${this.nextRlshp} nextProp:${this.nextProp}`;
     }
 }
 
@@ -411,22 +411,21 @@ class Prop {
     }
 
     toString() {
-        return `Node ${this.offset}: ${this.label} nextRlshp ${this.nextRlshp}`;
+        return `Prop ${this.offset} ${this.key}:${this.value} nextProp:${this.nextProp}`;
     }
 }
 
 class GraphInspector {
 
     constructor(graph) {
-        this.nodes = graph.nodes
-        this.rlshps = graph.rlshps
+        this.graph = graph
     }
 
-    traverseNode = (node, visitor) => {
+    traverseNode = async (node, visitor) => {
         visitor.startNode(node)
         if (node.nextRlshp !== undefined) {
             const rlshpFirstOffset = node.nextRlshp
-            const rlshpFirst = this.rlshps[rlshpFirstOffset]
+            const rlshpFirst = await this.graph.getRlshp(rlshpFirstOffset)
             visitor.nodeNext(node, rlshpFirst)
             this.traverseRlshp(rlshpFirst, visitor);
         } else {
@@ -434,24 +433,23 @@ class GraphInspector {
         }
     }
 
-    traverseRlshp = (rlshp, visitor) => {
+    traverseRlshp = async (rlshp, visitor) => {
         visitor.startRlshp(rlshp)
         if (rlshp.firstNextRel !== undefined) {
             const rlshpNextOffset = rlshp.firstNextRel
-            const rlshpNext = this.rlshps[rlshpNextOffset]
+            const rlshpNext = await this.graph.getRlshp(rlshpNextOffset)
             visitor.rlshpNext(rlshp, rlshpNext)
             this.traverseRlshp(rlshpNext, visitor);
         } else {
             visitor.endRlshp(rlshp)
         }
         const secondNodeOffset = rlshp.secondNode
-        const secondNode = this.nodes[secondNodeOffset]
+        const secondNode = await this.graph.getNode(secondNodeOffset)
         this.traverseNode(secondNode, visitor)
     }
 
-    debug = () => {
-        console.log(`Nodes ${this.nodes.length}, Rlshps ${this.rlshps.length}`)
-        const root = this.nodes[0]
+    debug = async () => {
+        const root = await this.graph.getRoot()
         this.traverseNode(root, debugVisitor())
         return this
     }
