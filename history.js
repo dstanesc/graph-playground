@@ -3,19 +3,20 @@ import { blockStorage } from './block-storage.js'
 import { create, load } from 'ipld-hashmap'
 import { sha256 as blockHasher } from 'multiformats/hashes/sha2'
 import * as blockCodec from '@ipld/dag-cbor'
+import { Offset } from './offset.js'
 
 const opts = { bitWidth: 4, bucketSize: 3, blockHasher, blockCodec }
 
 const history = async (blockStore, root) => {
 
     const rootGet = () => {
-      return root
+        return root
     }
 
     const push = async ({ nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset }) => {
         const map = await getMap()
         const offset = (await map.size()).toString()
-        await  map.set(offset, { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset })
+        await map.set(offset, { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset })
         root = map.cid.toString()
         return offset
     }
@@ -25,7 +26,7 @@ const history = async (blockStore, root) => {
         const currentOffset = (await map.size()) - 1
         let commit
         if (currentOffset === -1)
-            commit = { offset: '0', nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, nodeOffset: '0', rlshpOffset: '0', propOffset: '0', prevOffset: '-1'}
+            commit = { offset: 0, nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, nodeOffset: 0, rlshpOffset: 0, propOffset: 0, prevOffset: -1 }
         else
             commit = await map.get(currentOffset.toString())
         return commit

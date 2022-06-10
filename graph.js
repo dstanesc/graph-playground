@@ -1,3 +1,5 @@
+import { Offset } from './offset.js'
+
 class Graph {
 
     constructor({ nodeGet, rlshpGet, propGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit }) {
@@ -22,7 +24,7 @@ class Graph {
     }
 
     async getRoot() {
-        return await this.getNode('0')
+        return await this.getNode(new Offset(0))
     }
 
     async getNode(offset) {
@@ -50,38 +52,38 @@ class GraphReader {
     }
 
     async getNode(offset) {
-        if (this.graph.nodes[offset] !== undefined)
-            return this.graph.nodes[offset]
+        if (this.graph.nodes[offset.toString()] !== undefined)
+            return this.graph.nodes[offset.toString()]
         else {
             const node = await this.graph.nodeGet(offset)
-            this.graph.nodes[offset] = node
+            this.graph.nodes[offset.toString()] = node
             return node
         }
     }
 
     async getRlshp(offset) {
-        if (this.graph.rlshps[offset] !== undefined)
-            return this.graph.rlshps[offset]
+        if (this.graph.rlshps[offset.toString()] !== undefined)
+            return this.graph.rlshps[offset.toString()]
         else {
             const rlshp = await this.graph.rlshpGet(offset)
-            this.graph.rlshps[offset] = rlshp
+            this.graph.rlshps[offset.toString()] = rlshp
             return rlshp
         }
     }
 
     async getProp(offset) {
-        if (this.graph.props[offset] !== undefined)
-            return this.graph.props[offset]
+        if (this.graph.props[offset.toString()] !== undefined)
+            return this.graph.props[offset.toString()]
         else {
             const prop = await this.graph.propGet(offset)
-            this.graph.props[offset] = prop
+            this.graph.props[offset.toString()] = prop
             return prop
         }
     }
 
     async * read(path, select) {
         try {
-            const root = await this.getNode('0')
+            const root = await this.getNode(new Offset(0))
             yield* this.readInternal(root, 0, path, select)
         } catch (e) {
             if (e instanceof SearchCompleted) {
@@ -192,15 +194,15 @@ class GraphWriter {
     }
 
     nextNodeOffset() {
-        return this.nodeOffset++
+        return new Offset(this.nodeOffset++)
     }
 
     nextRlshpOffset() {
-        return this.rlshpOffset++
+        return new Offset(this.rlshpOffset++)
     }
 
     nextPropOffset() {
-        return this.propOffset++
+        return new Offset(this.propOffset++)
     }
 
     addNode(label) {
@@ -258,8 +260,8 @@ class GraphWriter {
 
     async getRlshp(offset) {
         let rlshp
-        if (offset >= this.initRlshpOffset)
-            rlshp = this.rlshpsAdded[offset - this.initRlshpOffset]
+        if (offset.greaterOrEquals(this.initRlshpOffset))
+            rlshp = this.rlshpsAdded[offset.minus(this.initRlshpOffset)]
         else
             rlshp = await this.graph.getRlshp(offset)
         return rlshp
@@ -267,8 +269,8 @@ class GraphWriter {
 
     async getProp(offset) {
         let prop
-        if (offset >= this.initPropOffset)
-            prop = this.propsAdded[offset - this.initPropOffset]
+        if (offset.greaterOrEquals(this.initPropOffset))
+            prop = this.propsAdded[offset.minus(this.initPropOffset)]
         else
             prop = await this.graph.getProp(offset)
         return prop
@@ -287,15 +289,15 @@ class Rlshp {
 
     toJson() {
         const json = {
-            offset: this.offset,
+            offset: this.offset.toString(),
             label: this.label,
-            firstNode: this.firstNode,
-            secondNode: this.secondNode,
+            firstNode: this.firstNode.toString(),
+            secondNode: this.secondNode.toString(),
         }
         if (this.firstPrevRel !== undefined)
-            json.firstPrevRel = this.firstPrevRel
+            json.firstPrevRel = this.firstPrevRel.toString()
         if (this.firstNextRel !== undefined)
-            json.firstNextRel = this.firstNextRel
+            json.firstNextRel = this.firstNextRel.toString()
 
         return json
     }
@@ -311,7 +313,7 @@ class Rlshp {
     }
 
     static fromJson(json) {
-        return new Rlshp(json.offset, json.label, json.firstNode, json.secondNode, json.firstPrevRel, json.firstNextRel)
+        return new Rlshp(new Offset(json.offset), json.label, new Offset(json.firstNode), new Offset(json.secondNode), json.firstPrevRel  !== undefined ? new Offset(json.firstPrevRel) : undefined, json.firstNextRel  !== undefined ? new Offset(json.firstNextRel) : undefined)
     }
 
     toString() {
@@ -343,7 +345,7 @@ class Node {
     async addProp(graphWriter, propName, propValue) {
         if (propName !== undefined && propValue !== undefined) {
             const prop = new Prop(graphWriter.nextPropOffset(), propName, propValue)
-            if (this.nextProp !== undefined){
+            if (this.nextProp !== undefined) {
                 const next = await graphWriter.getProp(this.nextProp)
                 next.addProp(graphWriter, prop)
             } else
@@ -355,20 +357,20 @@ class Node {
 
     toJson() {
         const json = {
-            offset: this.offset,
+            offset: this.offset.toString(),
             label: this.label,
         }
         if (this.nextRlshp !== undefined)
-            json.nextRlshp = this.nextRlshp
+            json.nextRlshp = this.nextRlshp.toString()
 
         if (this.nextProp !== undefined)
-            json.nextProp = this.nextProp
+            json.nextProp = this.nextProp.toString()
 
         return json
     }
 
     static fromJson(json) {
-        return new Node(json.offset, json.label, json.nextRlshp, json.nextProp)
+        return new Node(new Offset(json.offset), json.label, json.nextRlshp !== undefined ? new Offset(json.nextRlshp) : undefined, json.nextProp !== undefined ? new Offset(json.nextProp) : undefined)
     }
 
     toString() {
@@ -387,7 +389,7 @@ class Prop {
     async addProp(graphWriter, prop) {
         if (this.nextProp === undefined)
             this.nextProp = prop.offset
-        else{
+        else {
             const next = await graphWriter.getProp(this.nextProp)
             next.addProp(graphWriter, prop)
         }
@@ -396,18 +398,18 @@ class Prop {
 
     toJson() {
         const json = {
-            offset: this.offset,
+            offset: this.offset.toString(),
             key: this.key,
             value: this.value,
         }
         if (this.nextProp !== undefined)
-            json.nextProp = this.nextProp
+            json.nextProp = this.nextProp.toString()
 
         return json
     }
 
     static fromJson(json) {
-        return new Prop(json.offset, json.key, json.value, json.nextProp)
+        return new Prop(new Offset(json.offset), json.key, json.value, json.nextProp !== undefined ? new Offset(json.nextProp) : undefined)
     }
 
     toString() {

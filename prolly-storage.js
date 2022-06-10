@@ -5,6 +5,7 @@ import { bf, simpleCompare as compare } from 'prolly-trees/utils'
 import { nocache, global as globalCache } from 'prolly-trees/cache'
 import { blockStorage } from './block-storage.js'
 import { Node, Rlshp, Prop } from './graph.js'
+import { Offset } from './offset.js'
 
 const chunker = bf(3)
 
