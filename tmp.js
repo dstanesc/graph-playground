@@ -1,4 +1,4 @@
-import { Graph, GraphProcessor, contentAddressVisitor } from './graph.js'
+import { Graph, GraphProcessor } from './graph.js'
 import { blockStorage } from './block-storage.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'

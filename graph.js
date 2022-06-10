@@ -296,13 +296,15 @@ class GraphWriter {
 }
 
 class Rlshp {
-    constructor(offset, label, firstNode, secondNode, firstPrevRel, firstNextRel) {
+    constructor(offset, label, firstNode, secondNode, firstPrevRel, firstNextRel, secondPrevRel, secondNextRel) {
         this.offset = offset
         this.label = label
         this.firstNode = firstNode
         this.secondNode = secondNode
         this.firstPrevRel = firstPrevRel
         this.firstNextRel = firstNextRel
+        this.secondPrevRel = secondPrevRel
+        this.secondNextRel = secondNextRel
     }
 
     toJson() {
@@ -316,6 +318,11 @@ class Rlshp {
             json.firstPrevRel = this.firstPrevRel.toJson()
         if (this.firstNextRel !== undefined)
             json.firstNextRel = this.firstNextRel.toJson()
+        if (this.secondPrevRel !== undefined)
+            json.secondPrevRel = this.secondPrevRel.toJson()
+        if (this.secondNextRel !== undefined)
+            json.secondNextRel = this.secondNextRel.toJson()
+
 
         return json
     }
@@ -331,7 +338,7 @@ class Rlshp {
     }
 
     static fromJson(json) {
-        return new Rlshp(Offset.fromJson(json.offset), json.label, Offset.fromJson(json.firstNode), Offset.fromJson(json.secondNode), json.firstPrevRel !== undefined ? Offset.fromJson(json.firstPrevRel) : undefined, json.firstNextRel !== undefined ? Offset.fromJson(json.firstNextRel) : undefined)
+        return new Rlshp(Offset.fromJson(json.offset), json.label, Offset.fromJson(json.firstNode), Offset.fromJson(json.secondNode), json.firstPrevRel !== undefined ? Offset.fromJson(json.firstPrevRel) : undefined, json.firstNextRel !== undefined ? Offset.fromJson(json.firstNextRel) : undefined, json.secondPrevRel !== undefined ? Offset.fromJson(json.secondPrevRel) : undefined, json.secondNextRel !== undefined ? Offset.fromJson(json.secondNextRel) : undefined)
     }
 
     toString() {
