@@ -289,15 +289,15 @@ class Rlshp {
 
     toJson() {
         const json = {
-            offset: this.offset.toString(),
+            offset: this.offset,
             label: this.label,
-            firstNode: this.firstNode.toString(),
-            secondNode: this.secondNode.toString(),
+            firstNode: this.firstNode,
+            secondNode: this.secondNode,
         }
         if (this.firstPrevRel !== undefined)
-            json.firstPrevRel = this.firstPrevRel.toString()
+            json.firstPrevRel = this.firstPrevRel
         if (this.firstNextRel !== undefined)
-            json.firstNextRel = this.firstNextRel.toString()
+            json.firstNextRel = this.firstNextRel
 
         return json
     }
@@ -313,7 +313,7 @@ class Rlshp {
     }
 
     static fromJson(json) {
-        return new Rlshp(new Offset(json.offset), json.label, new Offset(json.firstNode), new Offset(json.secondNode), json.firstPrevRel  !== undefined ? new Offset(json.firstPrevRel) : undefined, json.firstNextRel  !== undefined ? new Offset(json.firstNextRel) : undefined)
+        return new Rlshp( Offset.fromJson(json.offset), json.label, Offset.fromJson(json.firstNode), Offset.fromJson(json.secondNode), json.firstPrevRel  !== undefined ? Offset.fromJson(json.firstPrevRel) : undefined, json.firstNextRel  !== undefined ? Offset.fromJson(json.firstNextRel) : undefined)
     }
 
     toString() {
@@ -357,20 +357,20 @@ class Node {
 
     toJson() {
         const json = {
-            offset: this.offset.toString(),
+            offset: this.offset,
             label: this.label,
         }
         if (this.nextRlshp !== undefined)
-            json.nextRlshp = this.nextRlshp.toString()
+            json.nextRlshp = this.nextRlshp
 
         if (this.nextProp !== undefined)
-            json.nextProp = this.nextProp.toString()
+            json.nextProp = this.nextProp
 
         return json
     }
 
     static fromJson(json) {
-        return new Node(new Offset(json.offset), json.label, json.nextRlshp !== undefined ? new Offset(json.nextRlshp) : undefined, json.nextProp !== undefined ? new Offset(json.nextProp) : undefined)
+        return new Node(Offset.fromJson(json.offset), json.label, json.nextRlshp !== undefined ? Offset.fromJson(json.nextRlshp) : undefined, json.nextProp !== undefined ? Offset.fromJson(json.nextProp) : undefined)
     }
 
     toString() {
@@ -398,18 +398,18 @@ class Prop {
 
     toJson() {
         const json = {
-            offset: this.offset.toString(),
+            offset: this.offset,
             key: this.key,
             value: this.value,
         }
         if (this.nextProp !== undefined)
-            json.nextProp = this.nextProp.toString()
+            json.nextProp = this.nextProp
 
         return json
     }
 
     static fromJson(json) {
-        return new Prop(new Offset(json.offset), json.key, json.value, json.nextProp !== undefined ? new Offset(json.nextProp) : undefined)
+        return new Prop(Offset.fromJson(json.offset), json.key, json.value, json.nextProp !== undefined ? Offset.fromJson(json.nextProp) : undefined)
     }
 
     toString() {

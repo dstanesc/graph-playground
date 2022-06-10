@@ -18,6 +18,17 @@ class Offset {
     toString() {
         return this.offset.toString();
     }
+
+    toJson() {
+        const json = {
+            color: this.offset
+        }
+        return json
+    }
+
+    static fromJson(json){
+        return new Offset(json.offset)
+    }
 }
 
 export { Offset }
