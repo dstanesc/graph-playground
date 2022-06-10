@@ -3,7 +3,7 @@
 import { create, createFrom, load } from 'ipld-vector'
 import { blockStorage } from './block-storage.js'
 import { Node, Rlshp, Prop } from './graph.js'
-
+import { Offset } from './offset.js'
 
 const opts = { width: 4, blockCodec: 'dag-cbor', blockAlg: 'sha2-256' }
 

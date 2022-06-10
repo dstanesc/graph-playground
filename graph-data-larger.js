@@ -1,5 +1,3 @@
-import bent from 'bent'
-import { Graph, GraphWriter, GraphInspector } from './graph.js'
 import nobel from './nobel.js'
 
 //https://api.nobelprize.org/v1/prize.json
