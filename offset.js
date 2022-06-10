@@ -1,6 +1,7 @@
 class Offset {
-    constructor(offset) {
+    constructor(offset, cid) {
         this.offset = offset
+        this.cid = cid
     }
 
     offsetValue() {
@@ -14,20 +15,24 @@ class Offset {
     minus(otherValue) {
         return new Offset(parseInt(this.offsetValue()) - parseInt(otherValue))
     }
-
+    
     toString() {
         return this.offset.toString();
     }
 
     toJson() {
         const json = {
-            color: this.offset
+            offset: this.offset
         }
+
+        if (this.cid !== undefined)
+            json.cid = this.cid
+
         return json
     }
 
-    static fromJson(json){
-        return new Offset(json.offset)
+    static fromJson(json) {
+        return new Offset(json.offset, json.cid)
     }
 }
 

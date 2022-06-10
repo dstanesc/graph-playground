@@ -1,6 +1,6 @@
 import Benchmark from 'benchmark'
 
-import { Graph, GraphReader, GraphInspector } from './graph.js'
+import { Graph} from './graph.js'
 import { blockStorage } from './block-storage.js'
 import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
