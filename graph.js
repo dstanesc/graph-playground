@@ -531,4 +531,4 @@ const contentAddressVisitor = () => {
     return { endNode, endRlshp, endProp }
 }
 
-export { Graph, GraphWriter, GraphReader, GraphProcessor, Node, Rlshp, Prop, contentAddressVisitor }
+export { Graph, GraphWriter, GraphReader, GraphProcessor, Node, Rlshp, Prop }
