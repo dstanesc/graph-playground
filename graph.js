@@ -243,7 +243,9 @@ class GraphWriter {
 
         console.log(`committing nodeOffset:${this.nodeOffset.toString()} rlshpOffset:${this.rlshpOffset.toString()} propOffset:${this.propOffset.toString()}`)
 
-        await new GraphProcessor(this).process(contentAddressVisitor())
+        await this.processIncomingRlshps()
+
+        await this.processContentAddressing()
 
         const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset.toString(), this.rlshpOffset.toString(), this.propOffset.toString())
 
@@ -261,6 +263,36 @@ class GraphWriter {
         this.propsRemoved = []
 
         return commitResult
+    }
+
+    async processIncomingRlshps() {
+        const incomingRlshpTable = new Map()
+        await new GraphProcessor(this).process(incomingRlshpsVisitor(incomingRlshpTable))
+        for (const [secondNodeOffset, rlshpSet] of incomingRlshpTable.entries()) {
+            if (rlshpSet !== undefined && rlshpSet.size > 1) { // build the chain
+                let rlshp1
+                let rlshp2
+                for (const rlshpOffset of rlshpSet.values()) {
+                    const temp = await this.getRlshp(rlshpOffset)
+                    if(rlshp1 == undefined){
+                       rlshp1 = temp 
+                    } else if(rlshp2 === undefined){
+                        rlshp2 = temp
+                        rlshp2.secondPrevRel = rlshp1.offset
+                        rlshp1.secondNextRel = rlshp2.offset
+                    } else {
+                       rlshp1 = rlshp2
+                       rlshp2 = temp
+                       rlshp2.secondPrevRel = rlshp1.offset
+                       rlshp1.secondNextRel = rlshp2.offset
+                    }
+                }
+            }
+        }
+    }
+
+    async processContentAddressing() {
+        await new GraphProcessor(this).process(contentAddressVisitor())
     }
 
     async getRoot() {
@@ -354,7 +386,6 @@ class Node {
         this.nextRlshp = nextRlshp
         this.nextProp = nextProp
     }
-
 
     async addRlshp(graphWriter, label, node) {
         const rlshp = new Rlshp(graphWriter.nextRlshpOffset(), label, this.offset, node.offset)
