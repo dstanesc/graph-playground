@@ -32,7 +32,8 @@ describe('Prolly Nobel Prizes', function () {
 
             //copy 1
             const h1 = await history(s, hr)
-            const s1 = await prollyStorage(h1, s)
+            await h1.show()
+            const s1 = await prollyStorage(h1, s, 0)
             const g1 = new Graph(s1)
             const gw1 = g1.writer()
             const root1 = await g1.getRoot();
@@ -44,7 +45,8 @@ describe('Prolly Nobel Prizes', function () {
 
             //copy 2
             const h2 = await history(s, hr)
-            const s2 = await prollyStorage(h2, s)
+            await h2.show()
+            const s2 = await prollyStorage(h2, s, 0)
             const g2 = new Graph(s2)
             const gw2 = g2.writer()
             const root2 = await g2.getRoot();

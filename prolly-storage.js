@@ -13,13 +13,13 @@ const cache = globalCache
 
 const opts = { cache, chunker, codec, hasher }
 
-const prollyStorage = async (history, blockStore) => {
+const prollyStorage = async (history, blockStore, requestOffset) => {
 
     const nodeStore = blockStore
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.last()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ?  await history.navigate(requestOffset) : await history.last()
 
     const nodesCreate = async (nodes) => {
         const list = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))

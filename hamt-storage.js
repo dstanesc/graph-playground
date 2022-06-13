@@ -19,13 +19,13 @@ class Block {
     }
 }
 
-const hamtStorage = async (history, blockStore) => {
+const hamtStorage = async (history, blockStore, requestOffset) => {
 
     const nodeStore = blockStore
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset } = await history.last()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ?  await history.navigate(requestOffset) : await history.last()
 
     //FIXME log changes before distributed commit
     const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset,) => {

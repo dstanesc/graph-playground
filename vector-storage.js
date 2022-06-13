@@ -14,13 +14,13 @@ class Block {
     }
 }
 
-const vectorStorage = async (history, blockStore) => {
+const vectorStorage = async (history, blockStore, requestOffset) => {
 
     const nodeStore = blockStore
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.last()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ?  await history.navigate(requestOffset) : await history.last()
 
     const nodeGet = async offset => {
         const nodeVector = await load(nodeStore, nodesRoot, opts)
