@@ -21,7 +21,7 @@ const history = async (blockStore, root) => {
         return offset
     }
 
-    const current = async () => {
+    const last = async () => {
         const map = await getMap()
         const lastOffset = (await map.size()) - 1
         return navigate(lastOffset)
@@ -60,7 +60,7 @@ const history = async (blockStore, root) => {
         return root !== undefined ? await load(blockStore, CID.parse(root), opts) : await create(blockStore, opts)
     }
 
-    return { rootGet, push, current, navigate, size, show }
+    return { rootGet, push, last, navigate, size, show }
 }
 
 export { history }

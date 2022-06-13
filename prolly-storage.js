@@ -19,7 +19,7 @@ const prollyStorage = async (history, blockStore) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.current()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.last()
 
     const nodesCreate = async (nodes) => {
         const list = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))

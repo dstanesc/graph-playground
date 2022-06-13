@@ -25,7 +25,7 @@ const hamtStorage = async (history, blockStore) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset } = await history.current()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset } = await history.last()
 
     //FIXME log changes before distributed commit
     const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset,) => {

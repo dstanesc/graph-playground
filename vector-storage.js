@@ -20,7 +20,7 @@ const vectorStorage = async (history, blockStore) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.current()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.last()
 
     const nodeGet = async offset => {
         const nodeVector = await load(nodeStore, nodesRoot, opts)
