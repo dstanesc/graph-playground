@@ -23,18 +23,17 @@ const history = async (blockStore, root) => {
 
     const current = async () => {
         const map = await getMap()
-        const currentOffset = (await map.size()) - 1
-        let commit
-        if (currentOffset === -1)
-            commit = { offset: 0, nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, nodeOffset: 0, rlshpOffset: 0, propOffset: 0, prevOffset: -1 }
-        else
-            commit = await map.get(currentOffset.toString())
-        return commit
+        const lastOffset = (await map.size()) - 1
+        return navigate(lastOffset)
     }
 
     const navigate = async requestOffset => {
         const map = await getMap()
-        const commit = await map.get(requestOffset.toString())
+        let commit
+        if (requestOffset === -1)
+            commit = { offset: 0, nodesRoot: undefined, rlshpsRoot: undefined, propsRoot: undefined, nodeOffset: 0, rlshpOffset: 0, propOffset: 0, prevOffset: -1 }
+        else
+            commit = await map.get(requestOffset.toString())
         return commit
     }
 
