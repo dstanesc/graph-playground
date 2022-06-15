@@ -2,7 +2,6 @@ import { Graph } from '../graph.js'
 import { blockStorage } from '../block-storage.js'
 import { hamtStorage } from '../hamt-storage.js'
 import { prollyStorage } from '../prolly-storage.js'
-import { vectorStorage } from '../vector-storage.js'
 import { createGraph, updateGraph } from '../graph-data.js'
 import * as assert from 'assert';
 import { history } from '../history.js'
@@ -50,19 +49,19 @@ describe('Validate rlshp chaining, prolly', function () {
             // 17 => prev 19, next 18
             assert.equal(y2025_y2023.offset.offset, 17)
             assert.equal(y2025_y2023.secondPrevRel.offset, 19)
-            assert.equal(y2025_y2023.secondPrevRel.cid, 'bagaaieracf776v7celqkkdcihhgfjuopbx64vgpjtusclcep3tcgtxm7757q')
+            assert.equal(y2025_y2023.secondPrevRel.cid, 'bagaaierahsgghoawvqbfzxhmlxrxl7ub4kknoyaje7mxi5okf3hsbdcneksa')
             assert.equal(y2025_y2023.secondNextRel.offset, 18)
-            assert.equal(y2025_y2023.secondNextRel.cid, 'bagaaieraklt5as73uxzl4vknsmc3z2y2pzdgo6tlrgoo4iku7ogblyddcqoq')
+            assert.equal(y2025_y2023.secondNextRel.cid, 'bagaaierakbmtvrb53frlmx6bwo4wq3no32v7k6ydt5zmkgogky7noubpsq5a')
 
             // 18 => prev 17
             assert.equal(y2024_y2023.offset.offset, 18)
             assert.equal(y2024_y2023.secondPrevRel.offset, 17)
-            assert.equal(y2024_y2023.secondPrevRel.cid, 'bagaaieraixkj4brnimgoel4her6ftbu5ezon2yl7rtlvvfz34btyf7aczgya')
+            assert.equal(y2024_y2023.secondPrevRel.cid, 'bagaaiera6x7jbqa4uiivysw3vujn3ojo4e2mklse4l7ajmgamdrbmdjgzloa')
 
             // 19 => next 17
             assert.equal(root_y2023.offset.offset, 19)
             assert.equal(root_y2023.secondNextRel.offset, 17)
-            assert.equal(root_y2023.secondNextRel.cid, 'bagaaieraixkj4brnimgoel4her6ftbu5ezon2yl7rtlvvfz34btyf7aczgya')
+            assert.equal(root_y2023.secondNextRel.cid, 'bagaaiera6x7jbqa4uiivysw3vujn3ojo4e2mklse4l7ajmgamdrbmdjgzloa')
         });
     });
 });
