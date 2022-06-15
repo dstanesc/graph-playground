@@ -2,7 +2,6 @@ import Benchmark from 'benchmark'
 
 import { Graph } from './graph.js'
 import { blockStorage } from './block-storage.js'
-import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
 import { createGraph, updateGraph } from './graph-data.js'
@@ -10,16 +9,7 @@ import { createLargerGraph, updateLargerGraph } from './graph-data-larger.js'
 import { history } from './history.js'
 
 
-const s1 = async () => {
-  const s = blockStorage() 
-  const h = await history(s)
-  const s1 = await vectorStorage(h, s)
-  const g = new Graph(s1)
-  const gw = g.writer()
-  await createLargerGraph(gw)
-  await gw.commit()
-  return g
-}
+
 
 const s2 = async () => {
   const s = blockStorage() 
@@ -45,10 +35,9 @@ const s3 = async () => {
 
 
 const sx = async () => {
-  const v = await s1()
   const p = await s2()
   const h = await s3()
-  return { v, p, h }
+  return { p, h }
 }
 
 sx().then(su => {
@@ -69,15 +58,6 @@ sx().then(su => {
 
    //FIXME order affects run performance (first always best)
   querySuite
-
-    .add('Vector Reading', async () => {
-      const reader = su.v.reader()
-      const results = await reader.read([{ 'year': '2021' }, { 'category': 'chemistry' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
-      for await (const result of results) {
-        console.log('---Found---')
-        console.log(result)
-      }
-    })
 
     .add('Prolly Reading', async () => {
       const reader = su.p.reader()

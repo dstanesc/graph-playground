@@ -2,24 +2,11 @@ import Benchmark from 'benchmark'
 
 import { Graph } from './graph.js'
 import { blockStorage } from './block-storage.js'
-import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
 import { createGraph, updateGraph } from './graph-data.js'
 import { createLargerGraph, updateLargerGraph } from './graph-data-larger.js'
 import { history } from './history.js'
-
-
-const s1 = async () => {
-  const s = blockStorage() 
-  const h = await history(s)
-  const s1 = await vectorStorage(h, s)
-  const g = new Graph(s1)
-  const gw = g.writer()
-  await createLargerGraph(gw)
-  await gw.commit()
-  return g
-}
 
 const s2 = async () => {
   const s = blockStorage() 
@@ -44,10 +31,9 @@ const s3 = async () => {
 }
 
 const sx = async () => {
-  const g1 = await s1()
   const g2 = await s2()
   const g3 = await s3()
-  return { g1, g2, g3 }
+  return { g2, g3 }
 }
 
 sx().then(su => {
@@ -71,15 +57,6 @@ sx().then(su => {
 
     .add('Hamt Reading Cached', async () => {
       const reader = su.g3.reader()
-      const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
-      for await (const result of results) {
-        console.log('---Found---')
-        console.log(result)
-      }
-    })
-
-    .add('Vector Reading Cached', async () => {
-      const reader = su.g1.reader()
       const results = await reader.read([{ 'year': '1901' }, { 'category': 'medicine' }, { 'laureates': '*' }], ['surname', 'firstname', 'motivation'])
       for await (const result of results) {
         console.log('---Found---')

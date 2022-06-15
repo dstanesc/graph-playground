@@ -1,14 +1,14 @@
 import { Offset } from './offset.js'
 
-import { hashContent } from './hash.js'
+import { hashNode, hashRlshp, hashProp } from './hash.js'
 
 
 class Graph {
 
     constructor({ nodeGet, rlshpGet, propGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit }) {
-        this.nodes = []
-        this.rlshps = []
-        this.props = []
+        this.nodes = new Map()
+        this.rlshps = new Map()
+        this.props = new Map()
         this.nodeOffset = nodeOffsetGet()
         this.rlshpOffset = rlshpOffsetGet()
         this.propOffset = propOffsetGet()
@@ -16,6 +16,9 @@ class Graph {
         this.rlshpGet = rlshpGet
         this.propGet = propGet
         this.storageCommit = storageCommit
+        this.nodeOffsetGet = nodeOffsetGet
+        this.rlshpOffsetGet = rlshpOffsetGet
+        this.propOffsetGet = propOffsetGet
     }
 
     writer() {
@@ -55,31 +58,31 @@ class GraphReader {
     }
 
     async getNode(offset) {
-        if (this.graph.nodes[offset.toString()] !== undefined)
-            return this.graph.nodes[offset.toString()]
+        if (this.graph.nodes.has(offset.toString()))
+            return this.graph.nodes.get(offset.toString())
         else {
             const node = await this.graph.nodeGet(offset.toString())
-            this.graph.nodes[offset.toString()] = node
+            this.graph.nodes.set(offset.toString(), node)
             return node
         }
     }
 
     async getRlshp(offset) {
-        if (this.graph.rlshps[offset.toString()] !== undefined)
-            return this.graph.rlshps[offset.toString()]
+        if (this.graph.rlshps.has(offset.toString()))
+            return this.graph.rlshps.get(offset.toString())
         else {
             const rlshp = await this.graph.rlshpGet(offset.toString())
-            this.graph.rlshps[offset.toString()] = rlshp
+            this.graph.rlshps.set(offset.toString(), rlshp)
             return rlshp
         }
     }
 
     async getProp(offset) {
-        if (this.graph.props[offset.toString()] !== undefined)
-            return this.graph.props[offset.toString()]
+        if (this.graph.props.has(offset.toString()))
+            return this.graph.props.get(offset.toString())
         else {
             const prop = await this.graph.propGet(offset)
-            this.graph.props[offset.toString()] = prop
+            this.graph.props.set(offset.toString(), prop)
             return prop
         }
     }
@@ -182,12 +185,9 @@ class GraphWriter {
 
     constructor(graph) {
         this.graph = graph
-        this.nodesAdded = []
-        this.rlshpsAdded = []
-        this.propsAdded = []
-        this.nodesRemoved = []
-        this.rlshpsRemoved = []
-        this.propsRemoved = []
+        this.nodesAdded = new Map()
+        this.rlshpsAdded = new Map()
+        this.propsAdded = new Map()
         this.nodeOffset = graph.nodeOffset
         this.rlshpOffset = graph.rlshpOffset
         this.propOffset = graph.propOffset
@@ -211,56 +211,41 @@ class GraphWriter {
     addNode(label) {
         const node = new Node(this.nextNodeOffset(), label)
         //console.log(`Adding node ${node.offset} : ${node.label}`)
-        this.nodesAdded.push(node)
+        this.nodesAdded.set(node.offset.toString(), node)
         return node
     }
 
     addRlshp(rlshp) {
         //console.log(`Adding rlshp ${rlshp.offset} : ${rlshp.firstNode}=>${rlshp.secondNode}`)
-        this.rlshpsAdded.push(rlshp)
+        this.rlshpsAdded.set(rlshp.offset.toString(), rlshp)
         return this
     }
 
     addProp(prop) {
         //console.log(`Adding prop ${prop.offset} : ${prop.key}:${prop.value}`)
-        this.propsAdded.push(prop)
+        this.propsAdded.set(prop.offset.toString(), prop)
         return this
-    }
-
-    removeNode(offset) {
-        this.nodesRemoved.push(offset)
-    }
-
-    removeRlshp(offset) {
-        this.rlshpsRemoved.push(offset)
-    }
-
-    removeProp(offset) {
-        this.propsRemoved.push(offset)
     }
 
     async commit() {
 
-        console.log(`committing nodeOffset:${this.nodeOffset.toString()} rlshpOffset:${this.rlshpOffset.toString()} propOffset:${this.propOffset.toString()}`)
+        console.log(`committing nodeOffset:${this.nodeOffset} rlshpOffset:${this.rlshpOffset} propOffset:${this.propOffset}`)
 
         await this.processIncomingRlshps()
 
         await this.processContentAddressing()
 
-        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset.toString(), this.rlshpOffset.toString(), this.propOffset.toString())
+        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset, this.rlshpOffset, this.propOffset)
 
-        this.graph.nodes.push(...this.nodesAdded)
-        this.graph.rlshps.push(...this.rlshpsAdded)
-        this.graph.props.push(...this.propsAdded)
+        this.graph.nodes = new Map([...this.graph.nodes, ...this.nodesAdded])
+        this.graph.rlshps = new Map([...this.graph.rlshps, ...this.rlshpsAdded])
+        this.graph.props = new Map([...this.graph.props, ...this.propsAdded])
         this.graph.nodeOffset = this.nodeOffset
         this.graph.rlshpOffset = this.rlshpOffset
         this.graph.propOffset = this.propOffset
-        this.nodesAdded = []
-        this.rlshpsAdded = []
-        this.propsAdded = []
-        this.nodesRemoved = []
-        this.rlshpsRemoved = []
-        this.propsRemoved = []
+        this.nodesAdded = new Map()
+        this.rlshpsAdded = new Map()
+        this.propsAdded = new Map()
 
         return commitResult
     }
@@ -274,17 +259,17 @@ class GraphWriter {
                 let rlshp2
                 for (const rlshpOffset of rlshpSet.values()) {
                     const temp = await this.getRlshp(rlshpOffset)
-                    if(rlshp1 == undefined){
-                       rlshp1 = temp 
-                    } else if(rlshp2 === undefined){
+                    if (rlshp1 == undefined) {
+                        rlshp1 = temp
+                    } else if (rlshp2 === undefined) {
                         rlshp2 = temp
                         rlshp2.secondPrevRel = rlshp1.offset
                         rlshp1.secondNextRel = rlshp2.offset
                     } else {
-                       rlshp1 = rlshp2
-                       rlshp2 = temp
-                       rlshp2.secondPrevRel = rlshp1.offset
-                       rlshp1.secondNextRel = rlshp2.offset
+                        rlshp1 = rlshp2
+                        rlshp2 = temp
+                        rlshp2.secondPrevRel = rlshp1.offset
+                        rlshp1.secondNextRel = rlshp2.offset
                     }
                 }
             }
@@ -302,7 +287,7 @@ class GraphWriter {
     async getNode(offset) {
         let node
         if (offset.greaterOrEquals(this.initNodeOffset))
-            node = this.nodesAdded[offset.minus(this.initNodeOffset)]
+            node = this.nodesAdded.get(offset.toString())
         else
             node = await this.graph.getNode(offset)
         return node
@@ -311,7 +296,7 @@ class GraphWriter {
     async getRlshp(offset) {
         let rlshp
         if (offset.greaterOrEquals(this.initRlshpOffset))
-            rlshp = this.rlshpsAdded[offset.minus(this.initRlshpOffset)]
+            rlshp = this.rlshpsAdded.get(offset.toString())
         else
             rlshp = await this.graph.getRlshp(offset)
         return rlshp
@@ -320,7 +305,7 @@ class GraphWriter {
     async getProp(offset) {
         let prop
         if (offset.greaterOrEquals(this.initPropOffset))
-            prop = this.propsAdded[offset.minus(this.initPropOffset)]
+            prop = this.propsAdded.get(offset.toString())
         else
             prop = await this.graph.getProp(offset)
         return prop
@@ -552,17 +537,17 @@ const incomingRlshpsVisitor = (incomingRlshps) => {
 const contentAddressVisitor = () => {
 
     const endProp = async prop => {
-        const hash = await hashContent(JSON.stringify(prop.toJson()))
+        const hash = await hashProp(prop.toJson())
         prop.offset.cid = hash
     }
 
     const endRlshp = async rlshp => {
-        const hash = await hashContent(JSON.stringify(rlshp.toJson()))
+        const hash = await hashRlshp(rlshp.toJson())
         rlshp.offset.cid = hash
     }
 
     const endNode = async node => {
-        const hash = await hashContent(JSON.stringify(node.toJson()))
+        const hash = await hashNode(node.toJson())
         node.offset.cid = hash
     }
 

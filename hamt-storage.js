@@ -25,7 +25,7 @@ const hamtStorage = async (history, blockStore, requestOffset) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ?  await history.navigate(requestOffset) : await history.last()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ? await history.navigate(requestOffset) : await history.last()
 
     //FIXME log changes before distributed commit
     const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset,) => {
@@ -46,14 +46,17 @@ const hamtStorage = async (history, blockStore, requestOffset) => {
             propMap = await create(propStore, opts)
         }
 
-        for (const node of nodes) {
-            await nodeMap.set(node.offset.toString(), node.toJson())
+
+        for (const [key, value] of nodes) {
+            await nodeMap.set(key, value.toJson())
         }
-        for (const rlshp of rlshps) {
-            await rlshpMap.set(rlshp.offset.toString(), rlshp.toJson())
+
+        for (const [key, value] of rlshps) {
+            await rlshpMap.set(key, value.toJson())
         }
-        for (const prop of props) {
-            await propMap.set(prop.offset.toString(), prop.toJson())
+
+        for (const [key, value] of props) {
+            await propMap.set(key, value.toJson())
         }
 
         nodesRoot = nodeMap.cid.toString()
@@ -193,7 +196,7 @@ const hamtStorage = async (history, blockStore, requestOffset) => {
         return c
     }
 
-    return {nodesRootGet, rlshpsRootGet, propsRootGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
+    return { nodesRootGet, rlshpsRootGet, propsRootGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
 }
 
 

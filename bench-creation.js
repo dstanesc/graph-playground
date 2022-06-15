@@ -2,7 +2,6 @@ import Benchmark from 'benchmark'
 
 import { Graph} from './graph.js'
 import { blockStorage } from './block-storage.js'
-import { vectorStorage } from './vector-storage.js'
 import { prollyStorage } from './prolly-storage.js'
 import { hamtStorage } from './hamt-storage.js'
 import { createGraph, updateGraph } from './graph-data.js'
@@ -37,15 +36,6 @@ creationSuite
       const s = blockStorage() 
       const h = await history(s)
       const s1 = await hamtStorage(h, s)
-      const g = new Graph(s1)
-      const gw = g.writer()
-      const r = gw.addNode("root")
-      const blockResult1 = await gw.commit()
-    })
-    .add('Vector Graph Creation', async () => {
-      const s = blockStorage() 
-      const h = await history(s)
-      const s1 = await vectorStorage(h, s)
       const g = new Graph(s1)
       const gw = g.writer()
       const r = gw.addNode("root")

@@ -21,8 +21,12 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
 
     let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ?  await history.navigate(requestOffset) : await history.last()
 
+    const mapToList = (input) => {
+        return Array.from(input).map((elem) => ({ key: elem[0], value: elem[1].toJson() }))
+    }
     const nodesCreate = async (nodes) => {
-        const list = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        //const list = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        const list = mapToList(nodes)
         const get = nodeStore.get
         const blocks = []
         for await (const node of create({ get, compare, list, ...opts })) {
@@ -37,7 +41,8 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
     }
 
     const rlshpsCreate = async (rlshps) => {
-        const list = rlshps.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        //const list = rlshps.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        const list = mapToList(rlshps)
         const get = rlshpStore.get
         const blocks = []
         for await (const node of create({ get, compare, list, ...opts })) {
@@ -53,7 +58,8 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
 
 
     const propsCreate = async (props) => {
-        const list = props.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        //const list = props.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        const list = mapToList(props)
         const get = propStore.get
         const blocks = []
         for await (const node of create({ get, compare, list, ...opts })) {
@@ -125,10 +131,11 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
     }
 
     const nodesUpdate = async (nodes) => {
-        if (nodes.length > 0) {
-            const bulk = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        if (nodes.size > 0) {
+            //const bulk = nodes.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+            const list = mapToList(nodes)
             const actualRoot = await loadNodesRoot(nodesRoot)
-            const { blocks, root } = await actualRoot.bulk(bulk)
+            const { blocks, root } = await actualRoot.bulk(list)
             await Promise.all(blocks.map(b => nodeStore.put(b.cid, b)))
             nodesRoot = (await root.address).toString()
             return blocks
@@ -136,8 +143,9 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
     }
 
     const rlshpsUpdate = async (rlshps) => {
-        if (rlshps.length > 0) {
-            const list = rlshps.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        if (rlshps.size > 0) {
+            //const list = rlshps.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+            const list = mapToList(rlshps)
             const actualRoot = await loadRlshpsRoot(rlshpsRoot)
             const { blocks, root } = await actualRoot.bulk(list)
             await Promise.all(blocks.map(b => rlshpStore.put(b.cid, b)))
@@ -147,8 +155,9 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
     }
 
     const propsUpdate = async (props) => {
-        if (props.length > 0) {
-            const list = props.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+        if (props.size > 0) {
+            //const list = props.map((elem) => ({ key: elem.offset.toString(), value: elem.toJson() }))
+            const list = mapToList(props)
             const actualRoot = await loadPropsRoot(propsRoot)
             const { blocks, root } = await actualRoot.bulk(list)
             await Promise.all(blocks.map(b => propStore.put(b.cid, b)))
