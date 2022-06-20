@@ -479,7 +479,7 @@ class GraphProcessor {
             const rlshpFirst = await this.accessor.getRlshp(rlshpFirstOffset)
             await this.traverseRlshp(rlshpFirst, visitor);
         }
-        if (node.nextProp != undefined) {
+        if (node.nextProp !== undefined) {
             const propFirstOffset = node.nextProp
             const propFirst = await this.accessor.getProp(propFirstOffset)
             await this.traverseProp(propFirst, visitor)
