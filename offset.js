@@ -16,6 +16,10 @@ class Offset {
         return new Offset(parseInt(this.offsetValue()) - parseInt(otherValue))
     }
     
+    minusValue(otherValue) {
+        return parseInt(this.offsetValue() - parseInt(otherValue))
+    }
+
     toString() {
         return this.offset.toString();
     }
