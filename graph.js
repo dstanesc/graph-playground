@@ -350,7 +350,7 @@ class Rlshp {
             rlshp.firstPrevRel = this.firstNextRel
         } else {
             const firstNext = await graphWriter.getRlshp(this.firstNextRel)
-            firstNext.addRlshp(graphWriter, rlshp)
+            await firstNext.addRlshp(graphWriter, rlshp)
         }
     }
 
