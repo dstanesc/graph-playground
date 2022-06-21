@@ -5,7 +5,6 @@ import { prollyStorage } from '../prolly-storage.js'
 import { createLargerGraph, updateLargerGraph } from '../graph-data-larger.js'
 import * as assert from 'assert';
 import { history } from '../history.js'
-import { baselineChanges, mergeChanges } from '../changes.js'
 
 describe('Graph', function () {
 
@@ -49,9 +48,31 @@ describe('Graph', function () {
             await root2.addRlshp(gw2, 'year', y2024)
             await gw2.commit()
 
-            //FIXME WIP
-            mergeChanges(g1, g2, gb)
+            console.log('History before merge')
+            await h1.show()
 
+            assert.equal(2, await h1.size())
+
+            const gm = g1.merger()
+            await gm.mergeChanges(g2, gb)
+            await gm.commit()
+
+            console.log('History after merge')
+            await h1.show()
+
+            assert.equal(3, await h1.size())
+
+            // Query changes to validate merge
+            const reader = g1.reader()
+            const results = await reader.read([{ 'year': '2024' }], ['element'])
+            let found = []
+            for await (const result of results) {
+                console.log('---Found---')
+                console.log(result)
+                found.push(result)
+            }
+            assert.equal(1, found.length)
+            assert.deepEqual({ element: 'wood' }, found[0])
         });
     });
 });

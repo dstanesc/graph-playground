@@ -1,54 +1,6 @@
 import { Offset } from './offset.js'
 import { Node, Rlshp, Prop } from './graph.js'
 
-//FIXME WIP
-async function mergeChanges(local, other, baseline) {
-
-    //const localChanges = await baselineChanges(local, baseline)
-    const otherChanges = await baselineChanges(other, baseline)
-
-    const baselineNodeOffset = baseline.nodeOffsetGet()
-    const baselineRlshpOffset = baseline.rlshpOffsetGet()
-    const baselinePropOffset = baseline.propOffsetGet()
-    const baselineOffsets = { baselineNodeOffset, baselineRlshpOffset, baselinePropOffset }
-
-    const localNodeOffset = local.nodeOffsetGet()
-    const localRlshpOffset = local.rlshpOffsetGet()
-    const localPropOffset = local.propOffsetGet()
-
-    const localOffsets = { localNodeOffset, localRlshpOffset, localPropOffset }
-
-    for (const [offset, node] of otherChanges.nodesAdded) {
-        const rebasedNode = await rebaseNode(node, baselineOffsets, localOffsets)
-        console.log(`Rebasing node from ${offset} to ${rebasedNode.offset.offset}`)
-        console.log(`From`)
-        console.log(node.toJson())
-        console.log(`To`)
-        console.log(rebasedNode.toJson())
-    }
-
-    for (const [offset, rlshp] of otherChanges.rlshpsAdded) {
-        const rebasedRlshp = await rebaseRlshp(rlshp, baselineOffsets, localOffsets)
-        console.log(`Rebasing rlshp from ${offset} to ${rebasedRlshp.offset.offset}`)
-        console.log(`From`)
-        console.log(rlshp.toJson())
-        console.log(`To`)
-        console.log(rebasedRlshp.toJson())
-    }
-
-    for (const [offset, prop] of otherChanges.propsAdded) {
-        const rebasedProp = await rebaseProp(prop, baselineOffsets, localOffsets)
-        console.log(`Rebasing prop from ${offset} to ${rebasedProp.offset.offset}`)
-        console.log(`From`)
-        console.log(prop.toJson())
-        console.log(`To`)
-        console.log(rebasedProp.toJson())
-    }
-
-    //FIXME WIP
-}
-
-
 async function rebaseNode(node, baselineOffsets, localOffsets) {
     const rebasedNodeOffset = await rebaseOffset(node.offset, baselineOffsets.baselineNodeOffset, localOffsets.localNodeOffset)
     const rebasedNextRlshpOffset = node.nextRlshp === undefined ? undefined : await rebaseOffset(node.nextRlshp, baselineOffsets.baselineRlshpOffset, localOffsets.localRlshpOffset)
@@ -61,9 +13,9 @@ async function rebaseRlshp(rlshp, baselineOffsets, localOffsets) {
     const rebasedFirstNodeOffset = await rebaseOffset(rlshp.firstNode, baselineOffsets.baselineNodeOffset, localOffsets.localNodeOffset)
     const rebasedSecondNodeOffset = await rebaseOffset(rlshp.secondNode, baselineOffsets.baselineNodeOffset, localOffsets.localNodeOffset)
     const rebasedFirstPrevRlshpOffset = rlshp.firstPrevRel === undefined ? undefined : await rebaseOffset(rlshp.firstPrevRel, baselineOffsets.baselineRlshpOffset, localOffsets.localRlshpOffset)
-    const rebasedFirstNextRlshpOffset = rlshp.firstNextRel === undefined ? undefined : await rebaseOffset(rlshp.firstNextRel, baselineOffsets.baselinePropOffset, localOffsets.localPropOffset)
+    const rebasedFirstNextRlshpOffset = rlshp.firstNextRel === undefined ? undefined : await rebaseOffset(rlshp.firstNextRel, baselineOffsets.baselineRlshpOffset, localOffsets.localRlshpOffset)
     const rebasedSecondPrevRlshpOffset = rlshp.secondPrevRel === undefined ? undefined : await rebaseOffset(rlshp.secondPrevRel, baselineOffsets.baselineRlshpOffset, localOffsets.localRlshpOffset)
-    const rebasedSecondNextRlshpOffset = rlshp.secondNextRel === undefined ? undefined : await rebaseOffset(rlshp.secondNextRel, baselineOffsets.baselinePropOffset, localOffsets.localPropOffset)
+    const rebasedSecondNextRlshpOffset = rlshp.secondNextRel === undefined ? undefined : await rebaseOffset(rlshp.secondNextRel, baselineOffsets.baselineRlshpOffset, localOffsets.localRlshpOffset)
     return new Rlshp(rebasedRlshpOffset, rlshp.label, rebasedFirstNodeOffset, rebasedSecondNodeOffset, rebasedFirstPrevRlshpOffset, rebasedFirstNextRlshpOffset, rebasedSecondPrevRlshpOffset, rebasedSecondNextRlshpOffset)
 }
 
@@ -143,4 +95,4 @@ function* range(start, end) {
     }
 }
 
-export { baselineChanges, mergeChanges }
+export { baselineChanges, rebaseNode, rebaseRlshp, rebaseProp }

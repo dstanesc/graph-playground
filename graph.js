@@ -2,6 +2,7 @@ import { Offset } from './offset.js'
 
 import { hashNode, hashRlshp, hashProp } from './hash.js'
 
+import { baselineChanges, rebaseNode, rebaseRlshp, rebaseProp } from './changes.js'
 
 class Graph {
 
@@ -19,6 +20,10 @@ class Graph {
         this.nodeOffsetGet = nodeOffsetGet
         this.rlshpOffsetGet = rlshpOffsetGet
         this.propOffsetGet = propOffsetGet
+    }
+
+    merger() {
+        return new GraphMerger(this)
     }
 
     writer() {
@@ -181,7 +186,7 @@ class GraphReader {
     }
 }
 
-class GraphWriter {
+class GraphComposer {
 
     constructor(graph) {
         this.graph = graph
@@ -196,59 +201,6 @@ class GraphWriter {
         this.initPropOffset = graph.propOffset
     }
 
-    nextNodeOffset() {
-        return new Offset(this.nodeOffset++)
-    }
-
-    nextRlshpOffset() {
-        return new Offset(this.rlshpOffset++)
-    }
-
-    nextPropOffset() {
-        return new Offset(this.propOffset++)
-    }
-
-    addNode(label) {
-        const node = new Node(this.nextNodeOffset(), label)
-        //console.log(`Adding node ${node.offset} : ${node.label}`)
-        this.nodesAdded.set(node.offset.toString(), node)
-        return node
-    }
-
-    addRlshp(rlshp) {
-        //console.log(`Adding rlshp ${rlshp.offset} : ${rlshp.firstNode}=>${rlshp.secondNode}`)
-        this.rlshpsAdded.set(rlshp.offset.toString(), rlshp)
-        return this
-    }
-
-    addProp(prop) {
-        //console.log(`Adding prop ${prop.offset} : ${prop.key}:${prop.value}`)
-        this.propsAdded.set(prop.offset.toString(), prop)
-        return this
-    }
-
-    async commit() {
-
-        console.log(`committing nodeOffset:${this.nodeOffset} rlshpOffset:${this.rlshpOffset} propOffset:${this.propOffset}`)
-
-        await this.processIncomingRlshps()
-
-        await this.processContentAddressing()
-
-        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset, this.rlshpOffset, this.propOffset)
-
-        this.graph.nodes = new Map([...this.graph.nodes, ...this.nodesAdded])
-        this.graph.rlshps = new Map([...this.graph.rlshps, ...this.rlshpsAdded])
-        this.graph.props = new Map([...this.graph.props, ...this.propsAdded])
-        this.graph.nodeOffset = this.nodeOffset
-        this.graph.rlshpOffset = this.rlshpOffset
-        this.graph.propOffset = this.propOffset
-        this.nodesAdded = new Map()
-        this.rlshpsAdded = new Map()
-        this.propsAdded = new Map()
-
-        return commitResult
-    }
 
     async processIncomingRlshps() {
         const incomingRlshpTable = new Map()
@@ -309,6 +261,189 @@ class GraphWriter {
         else
             prop = await this.graph.getProp(offset)
         return prop
+    }
+}
+
+class GraphMerger extends GraphComposer {
+
+    addNode(node) {
+        this.nodesAdded.set(node.offset.toString(), node)
+        this.nodeOffset = Math.max(this.nodeOffset, node.offset.offset)
+        return this
+    }
+
+    addRlshp(rlshp) {
+        this.rlshpsAdded.set(rlshp.offset.toString(), rlshp)
+        this.rlshpOffset = Math.max(this.rlshpOffset, rlshp.offset.offset)
+        return this
+    }
+
+    addProp(prop) {
+        this.propsAdded.set(prop.offset.toString(), prop)
+        this.propOffset = Math.max(this.propOffset, prop.offset.offset)
+        return this
+    }
+
+    updateRlshp(rlshp) {
+        this.rlshpsAdded.set(rlshp.offset.toString(), rlshp)
+        return this
+    }
+
+    updateProp(prop) {
+        this.propsAdded.set(prop.offset.toString(), prop)
+        return this
+    }
+    
+
+    //FIXME WIP
+    async mergeChanges(other, baseline) {
+
+        const local = this.graph
+
+        const otherChanges = await baselineChanges(other, baseline)
+
+        const baselineNodeOffset = baseline.nodeOffsetGet()
+        const baselineRlshpOffset = baseline.rlshpOffsetGet()
+        const baselinePropOffset = baseline.propOffsetGet()
+        const baselineOffsets = { baselineNodeOffset, baselineRlshpOffset, baselinePropOffset }
+
+        const localNodeOffset = local.nodeOffsetGet()
+        const localRlshpOffset = local.rlshpOffsetGet()
+        const localPropOffset = local.propOffsetGet()
+        const localOffsets = { localNodeOffset, localRlshpOffset, localPropOffset }
+
+        for (const [offset, node] of otherChanges.nodesAdded) {
+            const rebasedNode = await rebaseNode(node, baselineOffsets, localOffsets)
+            console.log(`Rebasing node from ${offset} to ${rebasedNode.offset.offset}`)
+            console.log(`From`)
+            console.log(node.toJson())
+            console.log(`To`)
+            console.log(rebasedNode.toJson())
+            this.addNode(rebasedNode)
+        }
+
+        for (const [offset, rlshp] of otherChanges.rlshpsAdded) {
+            const rebasedRlshp = await rebaseRlshp(rlshp, baselineOffsets, localOffsets)
+            console.log(`Rebasing rlshp from ${offset} to ${rebasedRlshp.offset.offset}`)
+            console.log(`From`)
+            console.log(rlshp.toJson())
+            console.log(`To`)
+            console.log(rebasedRlshp.toJson())
+            this.addRlshp(rebasedRlshp)
+        }
+
+        for (const [offset, prop] of otherChanges.propsAdded) {
+            const rebasedProp = await rebaseProp(prop, baselineOffsets, localOffsets)
+            console.log(`Rebasing prop from ${offset} to ${rebasedProp.offset.offset}`)
+            console.log(`From`)
+            console.log(prop.toJson())
+            console.log(`To`)
+            console.log(rebasedProp.toJson())
+            this.addProp(rebasedProp)
+        }
+
+        for (const [offset, rlshp] of otherChanges.rlshpsLinked) {
+            const rebasedRlshp = await rebaseRlshp(rlshp, baselineOffsets, localOffsets)
+            console.log(`Updating rlshp from ${offset} to ${rebasedRlshp.offset.offset}`)
+            console.log(`From`)
+            console.log(rlshp.toJson())
+            console.log(`To`)
+            console.log(rebasedRlshp.toJson())
+            this.updateRlshp(rebasedRlshp)
+        }
+
+        for (const [offset, prop] of otherChanges.propsLinked) {
+            const rebasedProp = await rebaseProp(prop, baselineOffsets, localOffsets)
+            console.log(`Updating prop from ${offset} to ${rebasedProp.offset.offset}`)
+            console.log(`From`)
+            console.log(prop.toJson())
+            console.log(`To`)
+            console.log(rebasedProp.toJson())
+            this.updateProp(rebasedProp)
+        }
+
+        //FIXME WIP
+    }
+
+
+    async commit() {
+
+        const rebasedNodeOffset = this.nodeOffset + 1
+        const rebasedRlshpOffset = this.rlshpOffset + 1
+        const rebasedPropOffset = this.propOffset + 1
+
+        console.log(`merging nodeOffset:${rebasedNodeOffset} rlshpOffset:${rebasedRlshpOffset} propOffset:${rebasedPropOffset}`)
+
+        // FIXME: recompute the updated chain only
+        await this.processContentAddressing()
+
+        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, rebasedNodeOffset, rebasedRlshpOffset, rebasedPropOffset)
+
+        this.graph.nodes = new Map([...this.graph.nodes, ...this.nodesAdded])
+        this.graph.rlshps = new Map([...this.graph.rlshps, ...this.rlshpsAdded])
+        this.graph.props = new Map([...this.graph.props, ...this.propsAdded])
+        this.graph.nodeOffset = rebasedNodeOffset
+        this.graph.rlshpOffset = rebasedRlshpOffset
+        this.graph.propOffset = rebasedPropOffset
+        this.nodesAdded = new Map()
+        this.rlshpsAdded = new Map()
+        this.propsAdded = new Map()
+
+        return commitResult
+    }
+}
+
+class GraphWriter extends GraphComposer {
+
+    nextNodeOffset() {
+        return new Offset(this.nodeOffset++)
+    }
+
+    nextRlshpOffset() {
+        return new Offset(this.rlshpOffset++)
+    }
+
+    nextPropOffset() {
+        return new Offset(this.propOffset++)
+    }
+
+    addNode(label) {
+        const node = new Node(this.nextNodeOffset(), label)
+        this.nodesAdded.set(node.offset.toString(), node)
+        return node
+    }
+
+    addRlshp(rlshp) {
+        this.rlshpsAdded.set(rlshp.offset.toString(), rlshp)
+        return this
+    }
+
+    addProp(prop) {
+        this.propsAdded.set(prop.offset.toString(), prop)
+        return this
+    }
+
+    async commit() {
+
+        console.log(`committing nodeOffset:${this.nodeOffset} rlshpOffset:${this.rlshpOffset} propOffset:${this.propOffset}`)
+
+        await this.processIncomingRlshps()
+
+        await this.processContentAddressing()
+
+        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset, this.rlshpOffset, this.propOffset)
+
+        this.graph.nodes = new Map([...this.graph.nodes, ...this.nodesAdded])
+        this.graph.rlshps = new Map([...this.graph.rlshps, ...this.rlshpsAdded])
+        this.graph.props = new Map([...this.graph.props, ...this.propsAdded])
+        this.graph.nodeOffset = this.nodeOffset
+        this.graph.rlshpOffset = this.rlshpOffset
+        this.graph.propOffset = this.propOffset
+        this.nodesAdded = new Map()
+        this.rlshpsAdded = new Map()
+        this.propsAdded = new Map()
+
+        return commitResult
     }
 }
 
