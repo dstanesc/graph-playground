@@ -40,7 +40,7 @@ describe('Prolly Nobel Prizes', function () {
             const s1 = await prollyStorage(h1, s, 0)
             const g1 = new Graph(s1)
             const gw1 = g1.writer()
-            const root1 = await g1.getRoot();
+            const root1 = await g1.getRoot()
             const y2023 = gw1.addNode("2023")
             await y2023.addProp(gw1, 'element', 'water')
             await y2023.addProp(gw1, 'sign', 'rabbit')
@@ -55,7 +55,7 @@ describe('Prolly Nobel Prizes', function () {
             const s2 = await prollyStorage(h2, s, 0)
             const g2 = new Graph(s2)
             const gw2 = g2.writer()
-            const root2 = await g2.getRoot();
+            const root2 = await g2.getRoot()
             const y2024 = gw2.addNode("2024")
             await root2.addRlshp(gw2, 'year', y2024)
             await gw2.commit()

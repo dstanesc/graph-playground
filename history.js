@@ -3,7 +3,6 @@ import { blockStorage } from './block-storage.js'
 import { create, load } from 'ipld-hashmap'
 import { sha256 as blockHasher } from 'multiformats/hashes/sha2'
 import * as blockCodec from '@ipld/dag-cbor'
-import { Offset } from './offset.js'
 
 const opts = { bitWidth: 4, bucketSize: 3, blockHasher, blockCodec }
 
@@ -42,14 +41,14 @@ const history = async (blockStore, root) => {
         return await map.size()
     }
 
-    const commits = async () => {
+    const offsets = async () => {
         const map = await getMap()
         return await map.keys()
     }
 
     const show = async () => {
         console.log(`History size = ${await size()}`)
-        for await (const commit of await commits()) {
+        for await (const commit of await offsets()) {
             let entry = await navigate(commit)
             console.log(JSON.stringify(entry, null, 2))
         }
@@ -60,7 +59,18 @@ const history = async (blockStore, root) => {
         return root !== undefined ? await load(blockStore, CID.parse(root), opts) : await create(blockStore, opts)
     }
 
-    return { rootGet, push, last, navigate, size, show }
+    const contains = async ({ nodesRoot, rlshpsRoot, propsRoot }) => {
+        const size = await size()
+        const map = await getMap()
+        for (let index = size - 1; index > -1; index--) {
+            const entry = await map.get(index.toString());
+            if (nodesRoot === entry.nodesRoot && rlshpsRoot === entry.rlshpsRoot && propsRoot === entry.propsRoot)
+                return entry
+        }
+        return undefined
+    } 
+
+    return { rootGet, push, last, navigate, size, show, contains, offsets }
 }
 
 export { history }
