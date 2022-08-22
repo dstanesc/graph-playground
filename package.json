@@ -28,7 +28,7 @@
   },
   "scripts": {
     "clean": "rimraf package-lock.json node_modules",
-    "test": "mocha test/test-*.js",
+    "test": "mocha test/test-enc*.js",
     "start": "node ./playground.js",
     "bench-create": "node ./bench-creation.js",
     "bench-full": "node ./bench-fullscan.js",
