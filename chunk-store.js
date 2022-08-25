@@ -68,7 +68,7 @@ const chunkStore = async ({ blockStore, chunker, root }) => {
         return startOffsetArray.slice(bounds.lt(startOffsetArray, startOffset), bounds.ge(startOffsetArray, endOffset) + 1)
     }
 
-    const read = async (startOffset, length) => {
+    const read = async (startOffset, length, blocksLoadedCallback) => {
         await ensureIndex()
         const endOffset = startOffset + length
         if (startOffset > index.byteArraySize) throw new Error(`Start offset out of range ${startOffset} > buffer size ${index.byteArraySize}`)
@@ -78,7 +78,9 @@ const chunkStore = async ({ blockStore, chunker, root }) => {
         const selectedChunks = relevantChunks(startOffsetArray, startOffset, endOffset)
         const resultBuffer = new Uint8Array(length)
         let cursor = 0
+        let blocksLoaded = 0
         for (let i = 0; i < selectedChunks.length; i++) {
+            blocksLoaded++
             const chunkOffset = selectedChunks[i]
             const chunkCid = startOffsetsIndexed.get(chunkOffset)
             const chunkBuffer = await blockStore.get(chunkCid)
@@ -103,6 +105,7 @@ const chunkStore = async ({ blockStore, chunker, root }) => {
             }
             console.log(`Cursor ${cursor}`)
         }
+        if (blocksLoadedCallback) blocksLoadedCallback(blocksLoaded)
         if (cursor !== resultBuffer.byteLength) throw new Error(`alg. error, check code`)
         return resultBuffer
     }
