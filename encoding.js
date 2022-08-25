@@ -39,15 +39,15 @@ class Encoder {
     /*
      * String, fixed size 64 bytes
      */
-        writeFixedLengthString64(value) {
-            const bytes = stringToUtf8(value)
-            if (bytes.length > 64) throw new Error(`String too large - ${bytes.length}, max allowed 64 bytes`)
-            const length = bytes.length
-            this.writeUInt(length)
-            const fixedSizeBuffer = new Uint8Array(64)
-            fixedSizeBuffer.set(bytes, 0)
-            return this.writeBytes(fixedSizeBuffer)
-        }
+    writeFixedLengthString64(value) {
+        const bytes = stringToUtf8(value)
+        if (bytes.length > 64) throw new Error(`String too large - ${bytes.length}, max allowed 64 bytes`)
+        const length = bytes.length
+        this.writeUInt(length)
+        const fixedSizeBuffer = new Uint8Array(64)
+        fixedSizeBuffer.set(bytes, 0)
+        return this.writeBytes(fixedSizeBuffer)
+    }
 
     /*
      * String, fixed size 32 bytes
