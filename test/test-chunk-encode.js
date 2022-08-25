@@ -7,14 +7,9 @@ import { blockStore } from '../block-store.js'
 import { unpack, pack } from 'msgpackr'
 import * as assert from 'assert';
 
+import { codec } from '../codec.js'
 
-const random = max => {
-    return Math.floor(Math.random() * max) + 1;
-}
-
-const io = blocksLoaded => {
-    console.log(blocksLoaded)
-}
+const random = max => Math.floor(Math.random() * max) + 1;
 
 describe('Nodes', function () {
     describe('Serialized to chunk store', function () {
@@ -27,17 +22,17 @@ describe('Nodes', function () {
             }
             const nodesByteArray = new NodesEncoder(nodes).write().content()
             assert.equal(52 * nodeCount, nodesByteArray.length)
-
+            const { encode, decode } = codec()
             const { get, put } = blockStore()
             const chunker = chunkers('fastcdc')
-            const cs = await chunkStore({ chunker })
+            const cs = await chunkStore()
 
-            const { root, index, blocks } = await cs.create(nodesByteArray) //root CID
+            const { root, index, blocks } = await cs.create({ buf: nodesByteArray, chunker, encode }) //root CID
             console.log(`Byte array length ${nodesByteArray.byteLength}`)
             console.log(`Root CID ${root}`)
             blocks.forEach(block => put(block))
 
-            const cs2 = await chunkStore({chunker })
+            const cs2 = await chunkStore()
 
             const startNode = 14
             const resultCount = 2
@@ -48,7 +43,7 @@ describe('Nodes', function () {
             console.log()
 
             let loaded = 0
-            const resultByteArray = await cs2.read(startOffset, byteLength, { root }, get, info => {
+            const resultByteArray = await cs2.read(startOffset, byteLength, { root, get, decode }, info => {
                 loaded = info.blocksLoaded
                 console.log(`Blocks loaded ${loaded}`)
             })

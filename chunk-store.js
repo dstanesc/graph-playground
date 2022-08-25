@@ -1,14 +1,6 @@
-
-import { CID } from 'multiformats/cid'
-import * as raw from 'multiformats/codecs/raw'
-import { sha256 } from 'multiformats/hashes/sha2'
 import bounds from 'binary-search-bounds'
 
 const INDEX_CONTROL_BYTE = 0b100100
-const CID_VERSION = 1
-const CODEC_CODE = raw.code
-
-
 
 const writeControlByte = (buffer, pos, controlByte) => {
     const controlBytes = new Uint8Array(4)
@@ -43,27 +35,10 @@ const readControlByte = (buffer, pos) => {
     return controlBytes[0]
 }
 
-const chunkStore = async ({ chunker }) => {
-
-    //let index = undefined
-
-    // const write = async buf => {
-    //     ({ root, index, blocks } = await writeIndex(buf))
-    //     return { root, index, blocks }
-    // }
-
-    // const ensureIndex = async () => {
-    //     if (index === undefined) {
-    //         if (root === undefined) {
-    //             throw new Error(`Missing root, please provide as arg`)
-    //         }
-    //         (index = await readIndex(root))
-    //     }
-    // }
-
+const chunkStore = async () => {
 
     // |<-- index control (4 bytes) -->|<-- index size (4 bytes) -->|<-- byte array size (4 bytes) -->|<-- chunk start offset (4 bytes) -->|<-- chunk end offset (4 bytes) -->|<-- chunk CID (36 bytes) -->|...
-    const create = async buf => {
+    const create = async ({ buf, chunker, encode }) => {
         const offsets = chunker(buf)
         const shift = 12 // allow index header
         const blockSize = 44
@@ -77,18 +52,15 @@ const chunkStore = async ({ chunker }) => {
         const byteArraySize = buf.length
         const indexBuffer = new Uint8Array(indexSize * (4 /* start offset */ + 4 /* end offset */ + 36 /* cid */) + (4 /* index control */ + 4 /* index size */) + 4 /* byte array size */)
         for (const offset of offsets.values()) {
-            //console.log(`Writing at ${pos}`)
             const chunkBytes = buf.subarray(lastOffset, offset)
-            const chunkHash = await sha256.digest(chunkBytes)
-            const chunkCid = CID.create(CID_VERSION, CODEC_CODE, chunkHash)
+            const chunkCid = await encode(chunkBytes)
             const block = { cid: chunkCid, bytes: chunkBytes }
             blocks.push(block)
-            //blockStore.put(chunkCid, chunkBytes)
             startOffsets.set(lastOffset, chunkCid)
             //endOffsets.set(lastOffset, offset - 1)
             if (chunkCid.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
             // TODO store chunk length vs. absolute offset 
-            // Propagate choice to rust chunking library
+            // Propagate choice to the rust library
             writeUInt(indexBuffer, pos, lastOffset)
             writeUInt(indexBuffer, pos + 4, offset)
             indexBuffer.set(chunkCid.bytes, pos + 8)
@@ -100,14 +72,12 @@ const chunkStore = async ({ chunker }) => {
         writeUInt(indexBuffer, 4, indexSize)  // index size
         writeUInt(indexBuffer, 8, byteArraySize)  // byte array size
 
-        const indexHash = await sha256.digest(indexBuffer)
-        const root = CID.create(1, raw.code, indexHash)
+        const root = await encode(indexBuffer)
         if (root.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
 
         // TODO chunk large indices
         const rootBlock = { cid: root, bytes: indexBuffer }
         blocks.push(rootBlock)
-        //blockStore.put(root, indexBuffer)
 
         index.indexSize = indexSize
         index.byteArraySize = byteArraySize
@@ -121,11 +91,11 @@ const chunkStore = async ({ chunker }) => {
         return startOffsetArray.slice(bounds.lt(startOffsetArray, startOffset), bounds.ge(startOffsetArray, endOffset) + 1)
     }
 
-    const read = async (startOffset, length, { root, index }, blockGet, debugCallback) => {
+    const read = async (startOffset, length, { root, index, decode, get }, debugCallback) => {
 
         if (index === undefined) {
-            if (root === undefined) throw new Error(`Missing root, please provide root as arg`)
-            index = await readIndex(root, blockGet)
+            if (root === undefined) throw new Error(`Missing root, please provide and index or root as arg`)
+            index = await readIndex(root, get, decode)
         }
         const endOffset = startOffset + length
         if (startOffset > index.byteArraySize) throw new Error(`Start offset out of range ${startOffset} > buffer size ${index.byteArraySize}`)
@@ -141,7 +111,7 @@ const chunkStore = async ({ chunker }) => {
             const chunkOffset = selectedChunks[i]
             const chunkCid = startOffsetsIndexed.get(chunkOffset)
             //const chunkBuffer = await blockStore.get(chunkCid)
-            const chunkBuffer = await blockGet(chunkCid)
+            const chunkBuffer = await get(chunkCid)
             if (chunkOffset <= startOffset && endOffset < chunkOffset + chunkBuffer.byteLength) {
                 // single block read
                 resultBuffer.set(chunkBuffer.subarray(startOffset - chunkOffset, endOffset - chunkOffset), cursor)
@@ -172,9 +142,9 @@ const chunkStore = async ({ chunker }) => {
         return resultBuffer
     }
 
-    const readIndex = async (root, blockGet) => {
+    const readIndex = async (root, get, decode) => {
         //const indexBuffer = await blockStore.get(root)
-        const indexBuffer = await blockGet(root)
+        const indexBuffer = await get(root)
         const controlByte = readControlByte(indexBuffer, 0)
         if (controlByte & INDEX_CONTROL_BYTE == 0) throw new Error(`This byte array is not an index`)
         const indexSize = readUInt(indexBuffer, 4)
@@ -189,7 +159,7 @@ const chunkStore = async ({ chunker }) => {
             const nextOffset = readUInt(indexBuffer, pos + 4)
             //const endOffset = nextOffset - 1
             const cidBytes = readBytes(indexBuffer, pos + 8, 36)
-            const chunkCid = CID.decode(cidBytes)
+            const chunkCid = decode(cidBytes)
             startOffsets.set(startOffset, chunkCid)
             pos += blockSize
         }
@@ -200,5 +170,7 @@ const chunkStore = async ({ chunker }) => {
 }
 
 export { chunkStore }
+
+
 
 
