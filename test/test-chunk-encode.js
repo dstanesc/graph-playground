@@ -3,7 +3,7 @@ import { Node, Rlshp, Prop } from '../graph.js'
 import { NodesEncoder, NodesDecoder, RlshpsEncoder, RlshpsDecoder, PropsEncoder, PropsDecoder } from '../encoding.js'
 import { chunkers } from '../chunkers.js'
 import { chunkStore } from '../chunk-store.js'
-import { blockStorage } from '../block-storage.js'
+import { blockStore } from '../block-store.js'
 import { unpack, pack } from 'msgpackr'
 import * as assert from 'assert';
 
@@ -28,15 +28,16 @@ describe('Nodes', function () {
             const nodesByteArray = new NodesEncoder(nodes).write().content()
             assert.equal(52 * nodeCount, nodesByteArray.length)
 
-            const blockStore = blockStorage()
+            const { get, put } = blockStore()
             const chunker = chunkers('fastcdc')
-            const cs = await chunkStore({ blockStore, chunker })
+            const cs = await chunkStore({ chunker })
 
-            const root = await cs.write(nodesByteArray) //root CID
+            const { root, index, blocks } = await cs.create(nodesByteArray) //root CID
             console.log(`Byte array length ${nodesByteArray.byteLength}`)
             console.log(`Root CID ${root}`)
+            blocks.forEach(block => put(block))
 
-            const cs2 = await chunkStore({ blockStore, chunker, root })
+            const cs2 = await chunkStore({chunker })
 
             const startNode = 14
             const resultCount = 2
@@ -46,22 +47,21 @@ describe('Nodes', function () {
             console.log()
             console.log()
 
-            let blocksLoaded = 0
-            
-            const resultByteArray = await cs2.read(startOffset, byteLength, blocks => {
-                blocksLoaded = blocks
-                console.log(`Blocks loaded ${blocksLoaded}`)
+            let loaded = 0
+            const resultByteArray = await cs2.read(startOffset, byteLength, { root }, get, info => {
+                loaded = info.blocksLoaded
+                console.log(`Blocks loaded ${loaded}`)
             })
 
             assert.equal(resultByteArray.byteLength, byteLength)
-            assert.equal(blocksLoaded,  1)
+            assert.equal(loaded, 1)
 
             console.log()
             console.log()
 
             const nodesResult = new NodesDecoder(resultByteArray).read()
             console.log(nodesResult)
-            
+
             assert.equal(nodesResult.length, resultCount)
             assert.equal(nodesResult[0].offset.offset, 52 * startNode)
             assert.equal(nodesResult[1].offset.offset, 52 * (startNode + 1))

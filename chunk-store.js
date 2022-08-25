@@ -16,7 +16,6 @@ const writeControlByte = (buffer, pos, controlByte) => {
     buffer.set(controlBytes, pos)
 }
 
-
 const writeUInt = (buffer, pos, value) => {
     if (value < 0 || value > 0xffffffff) throw new Error("Integer out of range")
     buffer[pos] = (value & 0xff)
@@ -25,7 +24,6 @@ const writeUInt = (buffer, pos, value) => {
     buffer[pos + 3] = (value >>> 24)
     return pos + 4
 }
-
 
 const readUInt = (buffer, pos) => {
     const value = ((buffer[pos]) |
@@ -45,31 +43,90 @@ const readControlByte = (buffer, pos) => {
     return controlBytes[0]
 }
 
-const chunkStore = async ({ blockStore, chunker, root }) => {
+const chunkStore = async ({ chunker }) => {
 
-    let index = undefined
+    //let index = undefined
 
-    const write = async buf => {
-        ({ root, index } = await writeIndex(buf))
-        return root
-    }
+    // const write = async buf => {
+    //     ({ root, index, blocks } = await writeIndex(buf))
+    //     return { root, index, blocks }
+    // }
 
-    const ensureIndex = async () => {
-        if (index === undefined) {
-            if (root === undefined) {
-                throw new Error(`Missing root, please provide as arg`)
-            }
-            (index = await readIndex(root))
+    // const ensureIndex = async () => {
+    //     if (index === undefined) {
+    //         if (root === undefined) {
+    //             throw new Error(`Missing root, please provide as arg`)
+    //         }
+    //         (index = await readIndex(root))
+    //     }
+    // }
+
+
+    // |<-- index control (4 bytes) -->|<-- index size (4 bytes) -->|<-- byte array size (4 bytes) -->|<-- chunk start offset (4 bytes) -->|<-- chunk end offset (4 bytes) -->|<-- chunk CID (36 bytes) -->|...
+    const create = async buf => {
+        const offsets = chunker(buf)
+        const shift = 12 // allow index header
+        const blockSize = 44
+        let lastOffset = 0
+        let pos = shift
+        const startOffsets = new Map()
+        const blocks = [] // {cid, bytes}
+        //const endOffsets = new Map()
+        const index = { startOffsets /*, endOffsets*/ }
+        const indexSize = offsets.length
+        const byteArraySize = buf.length
+        const indexBuffer = new Uint8Array(indexSize * (4 /* start offset */ + 4 /* end offset */ + 36 /* cid */) + (4 /* index control */ + 4 /* index size */) + 4 /* byte array size */)
+        for (const offset of offsets.values()) {
+            //console.log(`Writing at ${pos}`)
+            const chunkBytes = buf.subarray(lastOffset, offset)
+            const chunkHash = await sha256.digest(chunkBytes)
+            const chunkCid = CID.create(CID_VERSION, CODEC_CODE, chunkHash)
+            const block = { cid: chunkCid, bytes: chunkBytes }
+            blocks.push(block)
+            //blockStore.put(chunkCid, chunkBytes)
+            startOffsets.set(lastOffset, chunkCid)
+            //endOffsets.set(lastOffset, offset - 1)
+            if (chunkCid.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
+            // TODO store chunk length vs. absolute offset 
+            // Propagate choice to rust chunking library
+            writeUInt(indexBuffer, pos, lastOffset)
+            writeUInt(indexBuffer, pos + 4, offset)
+            indexBuffer.set(chunkCid.bytes, pos + 8)
+            lastOffset = offset
+            pos += blockSize
         }
+
+        writeControlByte(indexBuffer, 0, INDEX_CONTROL_BYTE) // index control
+        writeUInt(indexBuffer, 4, indexSize)  // index size
+        writeUInt(indexBuffer, 8, byteArraySize)  // byte array size
+
+        const indexHash = await sha256.digest(indexBuffer)
+        const root = CID.create(1, raw.code, indexHash)
+        if (root.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
+
+        // TODO chunk large indices
+        const rootBlock = { cid: root, bytes: indexBuffer }
+        blocks.push(rootBlock)
+        //blockStore.put(root, indexBuffer)
+
+        index.indexSize = indexSize
+        index.byteArraySize = byteArraySize
+
+        return { root, index, blocks }
     }
+
 
     const relevantChunks = (startOffsetArray, startOffset, endOffset) => {
 
         return startOffsetArray.slice(bounds.lt(startOffsetArray, startOffset), bounds.ge(startOffsetArray, endOffset) + 1)
     }
 
-    const read = async (startOffset, length, blocksLoadedCallback) => {
-        await ensureIndex()
+    const read = async (startOffset, length, { root, index }, blockGet, debugCallback) => {
+
+        if (index === undefined) {
+            if (root === undefined) throw new Error(`Missing root, please provide root as arg`)
+            index = await readIndex(root, blockGet)
+        }
         const endOffset = startOffset + length
         if (startOffset > index.byteArraySize) throw new Error(`Start offset out of range ${startOffset} > buffer size ${index.byteArraySize}`)
         if (endOffset > index.byteArraySize) throw new Error(`End offset out of range ${endOffset} > buffer size ${index.byteArraySize}`)
@@ -83,7 +140,8 @@ const chunkStore = async ({ blockStore, chunker, root }) => {
             blocksLoaded++
             const chunkOffset = selectedChunks[i]
             const chunkCid = startOffsetsIndexed.get(chunkOffset)
-            const chunkBuffer = await blockStore.get(chunkCid)
+            //const chunkBuffer = await blockStore.get(chunkCid)
+            const chunkBuffer = await blockGet(chunkCid)
             if (chunkOffset <= startOffset && endOffset < chunkOffset + chunkBuffer.byteLength) {
                 // single block read
                 resultBuffer.set(chunkBuffer.subarray(startOffset - chunkOffset, endOffset - chunkOffset), cursor)
@@ -105,62 +163,18 @@ const chunkStore = async ({ blockStore, chunker, root }) => {
             }
             console.log(`Cursor ${cursor}`)
         }
-        if (blocksLoadedCallback) blocksLoadedCallback(blocksLoaded)
+
+        if (debugCallback) {
+            debugCallback({ blocksLoaded })
+        }
+
         if (cursor !== resultBuffer.byteLength) throw new Error(`alg. error, check code`)
         return resultBuffer
     }
 
-
-    // |<-- index control (4 bytes) -->|<-- index size (4 bytes) -->|<-- byte array size (4 bytes) -->|<-- chunk start offset (4 bytes) -->|<-- chunk end offset (4 bytes) -->|<-- chunk CID (36 bytes) -->|...
-    const writeIndex = async buf => {
-        const offsets = chunker(buf)
-        const shift = 12 // allow index header
-        const blockSize = 44
-        let lastOffset = 0
-        let pos = shift
-        const startOffsets = new Map()
-        //const endOffsets = new Map()
-        const index = { startOffsets /*, endOffsets*/ }
-        const indexSize = offsets.length
-        const byteArraySize = buf.length
-        const indexBuffer = new Uint8Array(indexSize * (4 /* start offset */ + 4 /* end offset */ + 36 /* cid */) + (4 /* index control */ + 4 /* index size */) + 4 /* byte array size */)
-        for (const offset of offsets.values()) {
-            //console.log(`Writing at ${pos}`)
-            const chunkBytes = buf.subarray(lastOffset, offset)
-            const chunkHash = await sha256.digest(chunkBytes)
-            const chunkCid = CID.create(CID_VERSION, CODEC_CODE, chunkHash)
-            blockStore.put(chunkCid, chunkBytes)
-            startOffsets.set(lastOffset, chunkCid)
-            //endOffsets.set(lastOffset, offset - 1)
-            if (chunkCid.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
-            // TODO store chunk length vs. absolute offset 
-            // Propagate choice to rust chunking library
-            writeUInt(indexBuffer, pos, lastOffset)
-            writeUInt(indexBuffer, pos + 4, offset)
-            indexBuffer.set(chunkCid.bytes, pos + 8)
-            lastOffset = offset;
-            pos += blockSize
-        }
-
-        writeControlByte(indexBuffer, 0, INDEX_CONTROL_BYTE) // index control
-        writeUInt(indexBuffer, 4, indexSize)  // index size
-        writeUInt(indexBuffer, 8, byteArraySize)  // byte array size
-
-        const indexHash = await sha256.digest(indexBuffer)
-        const root = CID.create(1, raw.code, indexHash)
-        if (root.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
-
-        // TODO chunk large indices
-        blockStore.put(root, indexBuffer)
-
-        index.indexSize = indexSize
-        index.byteArraySize = byteArraySize
-
-        return { root, index }
-    }
-
-    const readIndex = async indexCid => {
-        const indexBuffer = await blockStore.get(indexCid)
+    const readIndex = async (root, blockGet) => {
+        //const indexBuffer = await blockStore.get(root)
+        const indexBuffer = await blockGet(root)
         const controlByte = readControlByte(indexBuffer, 0)
         if (controlByte & INDEX_CONTROL_BYTE == 0) throw new Error(`This byte array is not an index`)
         const indexSize = readUInt(indexBuffer, 4)
@@ -182,7 +196,7 @@ const chunkStore = async ({ blockStore, chunker, root }) => {
         return index
     }
 
-    return { write, read, writeIndex, readIndex, relevantChunks }
+    return { create, read, readIndex, relevantChunks }
 }
 
 export { chunkStore }
