@@ -8,17 +8,7 @@ import * as json from 'multiformats/codecs/json'
 import * as assert from 'assert';
 import { codec } from '../codec.js'
 import {  partReports } from '@dstanesc/fake-metrology-data'
-import filedirname from 'filedirname'
-import path from 'path'
 
-export function readResource(fileName) {
-    const [__filename, __dirname] = filedirname(import.meta.url);
-    return read(path.join(__dirname, 'files', fileName));
-}
-
-export function read(path) {
-    return fs.readFileSync(path);
-}
 
 async function readReportChunks(buf, {minSize, avgSize, maxSize}) {
     console.log(buf.byteLength)
