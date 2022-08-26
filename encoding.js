@@ -69,10 +69,10 @@ class Encoder {
 
     writeBytes(bytes) {
         const start = this.cursor
-        console.log(`Writing bytes ${bytes} to offset ${start}, len=${bytes.byteLength}`)
+        //console.log(`Writing bytes ${bytes} to offset ${start}, len=${bytes.byteLength}`)
         this.buffer.set(bytes, start)
         this.cursor += bytes.byteLength
-        console.log(`Writing bytes ${bytes} to offset ${start}, moving cursor to ${this.cursor}`)
+        //console.log(`Writing bytes ${bytes} to offset ${start}, moving cursor to ${this.cursor}`)
         return this.cursor
     }
 
@@ -87,7 +87,7 @@ class Encoder {
         this.buffer[start + 2] = (value >>> 16)
         this.buffer[start + 3] = (value >>> 24)
         this.cursor += 4
-        console.log(`Writing uint ${value} to offset ${start}, moving cursor to ${this.cursor}`)
+        //console.log(`Writing uint ${value} to offset ${start}, moving cursor to ${this.cursor}`)
         return this.cursor
     }
 
@@ -128,7 +128,7 @@ class Decoder {
         const start = this.cursor
         this.cursor += length
         const bytes = this.buffer.subarray(start, this.cursor)
-        console.log(`Reading bytes ${bytes} from offset ${start}, moving cursor to ${this.cursor}`)
+        //console.log(`Reading bytes ${bytes} from offset ${start}, moving cursor to ${this.cursor}`)
         return bytes
     }
 
@@ -159,7 +159,7 @@ class Decoder {
             (this.buffer[start + 2] << 16)) +
             (this.buffer[start + 3] * 0x1000000)
         this.cursor += 4
-        console.log(`Reading uint ${value} from offset ${start}, moving cursor to ${this.cursor}`)
+        //console.log(`Reading uint ${value} from offset ${start}, moving cursor to ${this.cursor}`)
         return value
     }
 
@@ -173,7 +173,7 @@ class Decoder {
 
     readLabel() {
         const labelSize = this.readUInt()
-        console.log(`Reading label size ${labelSize}`);
+        //console.log(`Reading label size ${labelSize}`);
         return this.readFixedSizeString32(labelSize)
     }
 
