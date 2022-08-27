@@ -12,6 +12,13 @@ function utf8ToString(buffer) {
     return utf8Decoder.decode(buffer)
 }
 
+const REF_OFFSET_EXISTS = 0x0001
+const REF_CID_EXISTS = 0x0010
+
+const NODE_CONTROL_FLAG = 0x001
+const RLSHP_CONTROL_FLAG = 0x010
+const PROP_CONTROL_FLAG = 0x100
+
 class Encoder {
 
     constructor(size) {
@@ -37,9 +44,9 @@ class Encoder {
     // }
 
     /*
-     * String, fixed size 64 bytes
+     * String, fixed size 64 bytes 
      */
-    writeFixedLengthString64(value) {
+    writeFixedLengthString64(value) {  // 32 + 4
         const bytes = stringToUtf8(value)
         if (bytes.length > 64) throw new Error(`String too large - ${bytes.length}, max allowed 64 bytes`)
         const length = bytes.length
@@ -50,9 +57,9 @@ class Encoder {
     }
 
     /*
-     * String, fixed size 32 bytes
+     * String, fixed size 32 bytes 
      */
-    writeFixedLengthString32(value) {
+    writeFixedLengthString32(value) { // 32 + 4
         const bytes = stringToUtf8(value)
         if (bytes.length > 32) throw new Error(`String too large - ${bytes.length}, max allowed 32 bytes`)
         const length = bytes.length
@@ -91,10 +98,34 @@ class Encoder {
         return this.cursor
     }
 
+    /*
+     *  32-bit integer, little endian
+     */
+    writeInt(value) {
+        if (value < -0x80000000 || value > 0x7fffffff) throw new Error("Integer out of range")
+        const start = this.cursor
+        this.buffer[start] = (value & 0xff)
+        this.buffer[start + 1] = (value >>> 8)
+        this.buffer[start + 2] = (value >>> 16)
+        this.buffer[start + 3] = (value >>> 24)
+        this.cursor += 4
+        //console.log(`Writing int ${value} to offset ${start}, moving cursor to ${this.cursor}`)
+        return this.cursor
+    }
+
+
     writeControl(controlByte) {
         const controlBytes = new Uint8Array(4)
         controlBytes[0] = controlByte
         return this.writeBytes(controlBytes)
+    }
+
+    writeRefExists(offset, cidBytes) {
+        let flags = 0
+        flags |= REF_OFFSET_EXISTS
+        if (cidBytes)
+            flags |= REF_CID_EXISTS
+        return this.writeUInt(flags)
     }
 
     writeOffset(offset) {
@@ -106,8 +137,13 @@ class Encoder {
         return this.writeFixedLengthString32(label)
     }
 
-    writeRef(offset) {
-        return this.writeUInt(offset)
+    writeRef(offset, cidBytes) { // 44
+        this.writeRefExists(offset, cidBytes) // 4
+        this.writeUInt(offset) // 4
+        if (cidBytes) {
+            if (cidBytes.byteLength !== 36) throw new Error(`The CID has unexpected size ${cidBytes.byteLength}`)
+            this.writeBytes(cidBytes) //36
+        } else this.skipBytes(36)
     }
 
     skipBytes(length) {
@@ -119,7 +155,7 @@ class Encoder {
     }
 
     skipRef() {
-        this.skipUInt()
+        this.skipBytes(72)
     }
 
 }
@@ -175,12 +211,26 @@ class Decoder {
         return value
     }
 
+    /*
+     * 32-bit integer, little endian
+     */
+    readInt() {
+        const start = this.cursor
+        const value = (this.buffer[start]) |
+            (this.buffer[start + 1] << 8) |
+            (this.buffer[start + 2] << 16) |
+            (this.buffer[start + 3] << 24)
+        this.cursor += 4
+        //console.log(`Reading uint ${value} from offset ${start}, moving cursor to ${this.cursor}`)
+        return value
+    }
+
     readControl() {
         return this.readBytes(4)
     }
 
     readOffset() {
-        return this.readUInt()
+        return new Offset(this.readUInt())
     }
 
     readLabel() {
@@ -189,33 +239,57 @@ class Decoder {
         return this.readFixedSizeString32(labelSize)
     }
 
-    readRef() {
+    readRefExists() {
         return this.readUInt()
+    }
+
+    readRef() { // 44
+        const flags = this.readRefExists() // 4
+        if (flags & REF_OFFSET_EXISTS) {
+            const offset = this.readOffset() // 4
+            if (flags & REF_CID_EXISTS) {
+                const cidBytes = this.readBytes(36)
+                return new Offset(offset, cidBytes)
+            } else {
+                this.skipBytes(36)
+                return new Offset(offset)
+            }
+        } else {
+            this.skipBytes(68)
+            return undefined
+        }
+    }
+
+    skipBytes(length) {
+        this.cursor += length
     }
 }
 
 
+const NODE_SIZE_BYTES = 132
+
 class NodesEncoder extends Encoder {
 
     constructor(nodes) {
-        super(nodes.length * 52)
+        super(nodes.length * NODE_SIZE_BYTES)
         this.nodes = nodes
     }
 
     writeControlNode() {
-        return this.writeControl(0b100)
+        let flags = 0
+        return this.writeUInt(flags |= NODE_CONTROL_FLAG)
     }
 
-    writeNode(node) {
-        this.writeOffset(node.offset.offsetValue())
-        this.writeLabel(node.label)
+    writeNode(node) { // 128
+        this.writeOffset(node.offset.offsetValue()) // 4
+        this.writeLabel(node.label) // 32 + 4
         if (node.nextRlshp)
-            this.writeRef(node.nextRlshp.offsetValue())
+            this.writeRef(node.nextRlshp.offsetValue()) // 44
         else this.skipRef()
         if (node.nextProp)
-            this.writeRef(node.nextProp.offsetValue())
+            this.writeRef(node.nextProp.offsetValue()) // 44
         else this.skipRef()
-        this.writeControlNode()
+        return this.writeControlNode() // 4
     }
 
     write() {
@@ -226,20 +300,23 @@ class NodesEncoder extends Encoder {
 
 class NodesDecoder extends Decoder {
 
-    readNode() {
-        const offset = new Offset(this.readOffset())
-        const label = this.readLabel()
-        const nextRlshp = new Offset(this.readRef())
-        const nextProp = new Offset(this.readRef())
-        const controlBytes = this.readControl()
-        const controlByte = controlBytes[0]
-        if (controlByte & 0b100 == 0) throw new Error(`The buffer is not holding a node at this offset ${this.cursor - 52}`)
+    readControlNode() {
+        return this.readUInt()
+    }
+
+    readNode() { // 132
+        const offset = this.readOffset()
+        const label = this.readLabel() 
+        const nextRlshp = this.readRef()
+        const nextProp = this.readRef()
+        if (this.readControlNode() & NODE_CONTROL_FLAG === 0)
+            throw new Error(`The buffer is not holding a node at this offset ${this.cursor - NODE_SIZE_BYTES}`)
         return new Node(offset, label, nextRlshp, nextProp)
     }
 
     read() {
-        if (this.buffer.byteLength % 52 !== 0) throw new Error("Invalid node byte array")
-        const size = Math.trunc(this.buffer.byteLength / 52)
+        if (this.buffer.byteLength % NODE_SIZE_BYTES !== 0) throw new Error("Invalid node byte array")
+        const size = Math.trunc(this.buffer.byteLength / NODE_SIZE_BYTES)
         const nodes = []
         for (let i = 0; i < size; i++) {
             nodes.push(this.readNode())
@@ -249,35 +326,38 @@ class NodesDecoder extends Decoder {
 }
 
 
+const RLSHP_SIZE_BYTES = 308
+
 class RlshpsEncoder extends Encoder {
 
     constructor(rlshps) {
-        super(rlshps.length * 68)
+        super(rlshps.length * RLSHP_SIZE_BYTES)
         this.rlshps = rlshps
     }
 
     writeControlRlshp() {
-        return this.writeControl(0b1000)
+        let flags = 0
+        return this.writeUInt(flags |= RLSHP_CONTROL_FLAG)
     }
 
-    writeRlshp(rlshp) {
-        this.writeOffset(rlshp.offset.offsetValue())
-        this.writeLabel(rlshp.label)
-        this.writeRef(rlshp.firstNode.offsetValue())
-        this.writeRef(rlshp.secondNode.offsetValue())
+    writeRlshp(rlshp) { // 308
+        this.writeOffset(rlshp.offset.offsetValue()) // 4
+        this.writeLabel(rlshp.label) //  // 32 + 4
+        this.writeRef(rlshp.firstNode.offsetValue()) // 44
+        this.writeRef(rlshp.secondNode.offsetValue()) // 44
         if (rlshp.firstPrevRel)
-            this.writeRef(rlshp.firstPrevRel.offsetValue())
+            this.writeRef(rlshp.firstPrevRel.offsetValue()) // 44
         else this.skipRef()
         if (rlshp.firstNextRel)
-            this.writeRef(rlshp.firstNextRel.offsetValue())
+            this.writeRef(rlshp.firstNextRel.offsetValue()) // 44
         else this.skipRef()
         if (rlshp.secondPrevRel)
-            this.writeRef(rlshp.secondPrevRel.offsetValue())
+            this.writeRef(rlshp.secondPrevRel.offsetValue()) // 44
         else this.skipRef()
         if (rlshp.secondNextRel)
-            this.writeRef(rlshp.secondNextRel.offsetValue())
+            this.writeRef(rlshp.secondNextRel.offsetValue()) // 44
         else this.skipRef()
-        this.writeControlRlshp()
+        return this.writeControlRlshp() //4 
     }
 
     write() {
@@ -288,24 +368,27 @@ class RlshpsEncoder extends Encoder {
 
 class RlshpsDecoder extends Decoder {
 
-    readRlshp() {
-        const offset = new Offset(this.readOffset())
+    readControlRlshp() {
+        return this.readUInt()
+    }
+
+    readRlshp() { //RLSHP_SIZE_BYTES
+        const offset = this.readOffset()
         const label = this.readLabel()
-        const firstNode = new Offset(this.readRef())
-        const secondNode = new Offset(this.readRef())
-        const firstPrevRel = new Offset(this.readRef())
-        const firstNextRel = new Offset(this.readRef())
-        const secondPrevRel = new Offset(this.readRef())
-        const secondNextRel = new Offset(this.readRef())
-        const controlBytes = this.readControl()
-        const controlByte = controlBytes[0]
-        if (controlByte & 0b1000 == 0) throw new Error(`The buffer is not holding a rlshp at this offset ${this.cursor - 64}`)
+        const firstNode = this.readRef()
+        const secondNode = this.readRef()
+        const firstPrevRel = this.readRef()
+        const firstNextRel = this.readRef()
+        const secondPrevRel = this.readRef()
+        const secondNextRel = this.readRef()
+        if (this.readControlRlshp() & RLSHP_CONTROL_FLAG === 0)
+            throw new Error(`The buffer is not holding a rlshp at this offset ${this.cursor - RLSHP_SIZE_BYTES}`)
         return new Rlshp(offset, label, firstNode, secondNode, firstPrevRel, firstNextRel, secondPrevRel, secondNextRel)
     }
 
     read() {
-        if (this.buffer.byteLength % 68 !== 0) throw new Error("Invalid rlshp byte array")
-        const size = Math.trunc(this.buffer.byteLength / 64)
+        if (this.buffer.byteLength % RLSHP_SIZE_BYTES !== 0) throw new Error("Invalid rlshp byte array")
+        const size = Math.trunc(this.buffer.byteLength / RLSHP_SIZE_BYTES)
         const rlshps = []
         for (let i = 0; i < size; i++) {
             rlshps.push(this.readRlshp())
@@ -314,10 +397,12 @@ class RlshpsDecoder extends Decoder {
     }
 }
 
+const PROP_SIZE_BYTES = 152
+
 class PropsEncoder extends Encoder {
 
     constructor(props) {
-        super(props.length * 116)
+        super(props.length * PROP_SIZE_BYTES)
         this.props = props
     }
 
@@ -330,17 +415,18 @@ class PropsEncoder extends Encoder {
     }
 
     writeControlProp() {
-        return this.writeControl(0b10000)
+        let flags = 0
+        return this.writeUInt(flags |= PROP_CONTROL_FLAG)
     }
 
-    writeProp(prop) {
-        this.writeOffset(prop.offset.offsetValue())
-        this.writeKey(prop.key)
-        this.writeValue(prop.value)
+    writeProp(prop) { // PROP_SIZE_BYTES
+        this.writeOffset(prop.offset.offsetValue()) // 4
+        this.writeKey(prop.key)   // 32 + 4
+        this.writeValue(prop.value) // 64
         if (prop.nextProp)
-            this.writeRef(prop.nextProp.offsetValue())
+            this.writeRef(prop.nextProp.offsetValue()) // 44
         else this.skipRef()
-        this.writeControlProp()
+        return this.writeControlProp() // 4
     }
 
     write() {
@@ -364,20 +450,24 @@ class PropsDecoder extends Decoder {
         return this.readFixedSizeString64(cidSize)
     }
 
-    readProp() {
-        const offset = new Offset(this.readOffset())
+    readControlProp() {
+        return this.readUInt()
+    }
+
+    readProp() { // PROP_SIZE_BYTES
+        const offset = this.readOffset()
         const key = this.readKey()
         const cid = this.readValue() // FIXME elaborate elsewhere how to load cid content
-        const nextProp = new Offset(this.readRef())
-        const controlBytes = this.readControl()
-        const controlByte = controlBytes[0]
-        if (controlByte & 0b10000 == 0) throw new Error(`The buffer is not holding a prop at this offset ${this.cursor - 116}`)
+        const nextProp = this.readRef()
+        if (this.readControlProp() & PROP_CONTROL_FLAG === 0)
+            throw new Error(`The buffer is not holding a prop at this offset ${this.cursor - PROP_SIZE_BYTES}`)
+
         return new Prop(offset, key, cid, nextProp)
     }
 
     read() {
-        if (this.buffer.byteLength % 116 !== 0) throw new Error("Invalid prop byte array")
-        const size = Math.trunc(this.buffer.byteLength / 116)
+        if (this.buffer.byteLength % PROP_SIZE_BYTES !== 0) throw new Error("Invalid prop byte array")
+        const size = Math.trunc(this.buffer.byteLength / PROP_SIZE_BYTES)
         const props = []
         for (let i = 0; i < size; i++) {
             props.push(this.readProp())

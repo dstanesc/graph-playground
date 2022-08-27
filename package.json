@@ -35,7 +35,7 @@
   },
   "scripts": {
     "clean": "rimraf package-lock.json node_modules",
-    "test": "mocha test/test-chunk-encode.js",
+    "test": "mocha test/test-chunk-*.js",
     "start": "node ./playground-chunks.js",
     "bench-create": "node ./bench-creation.js",
     "bench-full": "node ./bench-fullscan.js",

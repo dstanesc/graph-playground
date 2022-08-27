@@ -10,17 +10,19 @@ import { codec } from '../codec.js'
 
 const random = max => Math.floor(Math.random() * max) + 1;
 
+const NODE_SIZE = 132
+
 describe('Nodes fixed size binary encoded', function () {
     describe('serialized to chunk store', function () {
         it('should require minimal retrieval I/O', async function () {
             const nodeCount = 1000
             const nodes = []
             for (let index = 0; index < nodeCount; index++) {
-                const node = new Node(new Offset(index * 52), `${index} node label`, new Offset(random(1024 * 1024)), new Offset(random(1024 * 1024)))
+                const node = new Node(new Offset(index * NODE_SIZE), `${index} node label`, new Offset(random(1024 * 1024)), new Offset(random(1024 * 1024)))
                 nodes.push(node)
             }
             const nodesByteArray = new NodesEncoder(nodes).write().content()
-            assert.equal(52 * nodeCount, nodesByteArray.length)
+            assert.equal(NODE_SIZE* nodeCount, nodesByteArray.length)
             const { encode, decode } = codec()
             const { get, put } = blockStore()
             const chunker = chunkers('fastcdc')
@@ -35,8 +37,8 @@ describe('Nodes fixed size binary encoded', function () {
 
             const startNode = 14
             const resultCount = 2
-            const startOffset = 52 * startNode
-            const byteLength = 52 * resultCount
+            const startOffset = NODE_SIZE * startNode
+            const byteLength = NODE_SIZE * resultCount
 
             console.log()
             console.log()
@@ -57,8 +59,8 @@ describe('Nodes fixed size binary encoded', function () {
             console.log(nodesResult)
 
             assert.equal(nodesResult.length, resultCount)
-            assert.equal(nodesResult[0].offset.offset, 52 * startNode)
-            assert.equal(nodesResult[1].offset.offset, 52 * (startNode + 1))
+            assert.equal(nodesResult[0].offset.offset, NODE_SIZE * startNode)
+            assert.equal(nodesResult[1].offset.offset, NODE_SIZE * (startNode + 1))
         });
     });
 
@@ -67,18 +69,18 @@ describe('Nodes fixed size binary encoded', function () {
             const nodeCount = 2000
             const nodes1 = []
             for (let index = 0; index < nodeCount; index++) {
-                const node = new Node(new Offset(index * 52), `${index} node label`, new Offset(random(1024 * 1024)), new Offset(random(1024 * 1024)))
+                const node = new Node(new Offset(index * NODE_SIZE), `${index} node label`, new Offset(random(1024 * 1024)), new Offset(random(1024 * 1024)))
                 nodes1.push(node)
             }
             const nodesByteArray1 = new NodesEncoder(nodes1).write().content()
-            assert.equal(52 * nodeCount, nodesByteArray1.length)
+            assert.equal(NODE_SIZE * nodeCount, nodesByteArray1.length)
             
 
             const nodes2 = [...nodes1]
-            nodes2.push(new Node(new Offset(nodeCount * 52), `${nodeCount} node label`, new Offset(random(1024 * 1024)), new Offset(random(1024 * 1024))))
+            nodes2.push(new Node(new Offset(nodeCount * NODE_SIZE), `${nodeCount} node label`, new Offset(random(1024 * 1024)), new Offset(random(1024 * 1024))))
 
             const nodesByteArray2 = new NodesEncoder(nodes2).write().content()
-            assert.equal(52 * (nodeCount + 1), nodesByteArray2.length)
+            assert.equal(NODE_SIZE * (nodeCount + 1), nodesByteArray2.length)
 
             const { encode, decode } = codec()
             const { get, put } = blockStore()
