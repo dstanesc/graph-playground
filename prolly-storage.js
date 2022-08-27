@@ -19,7 +19,7 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ?  await history.navigate(requestOffset) : await history.last()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ? await history.navigate(requestOffset) : await history.last()
 
     const mapToList = (input) => {
         return Array.from(input).map((elem) => ({ key: elem[0], value: elem[1].toJson() }))
@@ -167,19 +167,19 @@ const prollyStorage = async (history, blockStore, requestOffset) => {
     }
 
     //FIXME log changes before distributed commit
-    const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset) => {
+    const storageCommit = async (nodesComplete, rlshpsComplete, propsComplete, nodesAdded, rlshpsAdded, propsAdded, nOffset, rOffset, pOffset) => {
         let nodeBlocks
         let rlshpBlocks
         let propBlocks
         const update = nodesRoot !== undefined
         if (update) {
-            nodeBlocks = await nodesUpdate(nodes)
-            rlshpBlocks = await rlshpsUpdate(rlshps)
-            propBlocks = await propsUpdate(props)
+            nodeBlocks = await nodesUpdate(nodesAdded)
+            rlshpBlocks = await rlshpsUpdate(rlshpsAdded)
+            propBlocks = await propsUpdate(propsAdded)
         } else {
-            nodeBlocks = await nodesCreate(nodes)
-            rlshpBlocks = await rlshpsCreate(rlshps)
-            propBlocks = await propsCreate(props)
+            nodeBlocks = await nodesCreate(nodesAdded)
+            rlshpBlocks = await rlshpsCreate(rlshpsAdded)
+            propBlocks = await propsCreate(propsAdded)
         }
 
         nodeOffset = nOffset

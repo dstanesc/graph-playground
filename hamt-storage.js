@@ -28,7 +28,7 @@ const hamtStorage = async (history, blockStore, requestOffset) => {
     let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ? await history.navigate(requestOffset) : await history.last()
 
     //FIXME log changes before distributed commit
-    const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset,) => {
+    const storageCommit = async (nodesComplete, rlshpsComplete, propsComplete, nodesAdded, rlshpsAdded, propsAdded, nOffset, rOffset, pOffset,) => {
 
         const update = nodesRoot !== undefined
 
@@ -47,15 +47,15 @@ const hamtStorage = async (history, blockStore, requestOffset) => {
         }
 
 
-        for (const [key, value] of nodes) {
+        for (const [key, value] of nodesAdded) {
             await nodeMap.set(key, value.toJson())
         }
 
-        for (const [key, value] of rlshps) {
+        for (const [key, value] of rlshpsAdded) {
             await rlshpMap.set(key, value.toJson())
         }
 
-        for (const [key, value] of props) {
+        for (const [key, value] of propsAdded) {
             await propMap.set(key, value.toJson())
         }
 

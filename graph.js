@@ -6,7 +6,7 @@ import { baselineChanges, rebaseNode, rebaseRlshp, rebaseProp } from './changes.
 
 class Graph {
 
-    constructor({ nodeGet, rlshpGet, propGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit }) {
+    constructor({ nodeGet, rlshpGet, propGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit, offsetIncrements }) {
         this.nodes = new Map()
         this.rlshps = new Map()
         this.props = new Map()
@@ -20,6 +20,7 @@ class Graph {
         this.nodeOffsetGet = nodeOffsetGet
         this.rlshpOffsetGet = rlshpOffsetGet
         this.propOffsetGet = propOffsetGet
+        this.offsetIncrements = offsetIncrements
     }
 
     merger() {
@@ -199,6 +200,7 @@ class GraphComposer {
         this.initNodeOffset = graph.nodeOffset
         this.initRlshpOffset = graph.rlshpOffset
         this.initPropOffset = graph.propOffset
+        this.offsetIncrements = graph.offsetIncrements
     }
 
 
@@ -293,7 +295,7 @@ class GraphMerger extends GraphComposer {
         this.propsAdded.set(prop.offset.toString(), prop)
         return this
     }
-    
+
 
     //FIXME WIP
     async mergeChanges(other, baseline) {
@@ -396,14 +398,31 @@ class GraphMerger extends GraphComposer {
 class GraphWriter extends GraphComposer {
 
     nextNodeOffset() {
-        return new Offset(this.nodeOffset++)
+        if (this.offsetIncrements) {
+            const currentOffset = this.nodeOffset
+            this.nodeOffset += this.offsetIncrements.node
+            return new Offset(currentOffset)
+        } else
+            return new Offset(this.nodeOffset++)
     }
+
 
     nextRlshpOffset() {
-        return new Offset(this.rlshpOffset++)
+        if (this.offsetIncrements) {
+            const currentOffset = this.rlshpOffset
+            this.rlshpOffset += this.offsetIncrements.rlshp
+            return new Offset(currentOffset)
+        } else
+            return new Offset(this.rlshpOffset++)
     }
 
+
     nextPropOffset() {
+        if (this.offsetIncrements) {
+            const currentOffset = this.propOffset
+            this.propOffset += this.offsetIncrements.prop
+            return new Offset(currentOffset)
+        }
         return new Offset(this.propOffset++)
     }
 
@@ -431,11 +450,15 @@ class GraphWriter extends GraphComposer {
 
         await this.processContentAddressing()
 
-        const commitResult = await this.graph.storageCommit(this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset, this.rlshpOffset, this.propOffset)
+        const nodesComplete = new Map([...this.graph.nodes, ...this.nodesAdded])
+        const rlshpsComplete = new Map([...this.graph.rlshps, ...this.rlshpsAdded])
+        const propsComplete = new Map([...this.graph.props, ...this.propsAdded])
 
-        this.graph.nodes = new Map([...this.graph.nodes, ...this.nodesAdded])
-        this.graph.rlshps = new Map([...this.graph.rlshps, ...this.rlshpsAdded])
-        this.graph.props = new Map([...this.graph.props, ...this.propsAdded])
+        const commitResult = await this.graph.storageCommit(nodesComplete, rlshpsComplete, propsComplete, this.nodesAdded, this.rlshpsAdded, this.propsAdded, this.nodeOffset, this.rlshpOffset, this.propOffset)
+
+        this.graph.nodes = nodesComplete
+        this.graph.rlshps = rlshpsComplete
+        this.graph.props = propsComplete
         this.graph.nodeOffset = this.nodeOffset
         this.graph.rlshpOffset = this.rlshpOffset
         this.graph.propOffset = this.propOffset

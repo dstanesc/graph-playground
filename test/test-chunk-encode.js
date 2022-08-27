@@ -23,7 +23,7 @@ describe('Nodes fixed size binary encoded', function () {
             assert.equal(52 * nodeCount, nodesByteArray.length)
             const { encode, decode } = codec()
             const { get, put } = blockStore()
-            const chunker = chunkers('fastcdc', {})
+            const chunker = chunkers('fastcdc')
             const cs = await chunkStore()
 
             const { root, index, blocks } = await cs.create({ buf: nodesByteArray, chunker, encode }) //root CID

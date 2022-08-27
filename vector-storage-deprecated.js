@@ -20,7 +20,7 @@ const vectorStorage = async (history, blockStore, requestOffset) => {
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ?  await history.navigate(requestOffset) : await history.last()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ? await history.navigate(requestOffset) : await history.last()
 
     const nodeGet = async offset => {
         const nodeVector = await load(nodeStore, nodesRoot, opts)
@@ -52,7 +52,7 @@ const vectorStorage = async (history, blockStore, requestOffset) => {
         return propOffset
     }
 
-    const storageCommit = async (nodes, rlshps, props, nOffset, rOffset, pOffset) => {
+    const storageCommit = async (nodesComplete, rlshpsComplete, propsComplete, nodesAdded, rlshpsAdded, propsAdded, nOffset, rOffset, pOffset) => {
 
 
         const update = nodesRoot !== undefined
@@ -71,13 +71,13 @@ const vectorStorage = async (history, blockStore, requestOffset) => {
             propVector = await create(propStore, opts)
         }
 
-        for (const node of nodes) {
+        for (const node of nodesAdded) {
             await nodeVector.push(node.toJson())
         }
-        for (const rlshp of rlshps) {
+        for (const rlshp of rlshpsAdded) {
             await rlshpVector.push(rlshp.toJson())
         }
-        for (const prop of props) {
+        for (const prop of propsAdded) {
             await propVector.push(prop.toJson())
         }
 
@@ -89,7 +89,7 @@ const vectorStorage = async (history, blockStore, requestOffset) => {
         rlshpOffset = rOffset
         propOffset = pOffset
 
-        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset: offset})
+        offset = await history.push({ nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset: offset })
 
         return roots()
     }
@@ -177,7 +177,7 @@ const vectorStorage = async (history, blockStore, requestOffset) => {
         return c
     }
 
-    return {nodeOffsetGet, rlshpOffsetGet, propOffsetGet,  storageCommit, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
+    return { nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit, size, count, roots, blocks, showBlocks, nodeGet, rlshpGet, propGet }
 }
 
 

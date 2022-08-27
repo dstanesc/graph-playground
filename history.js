@@ -1,5 +1,4 @@
 import { CID } from 'multiformats/cid'
-import { blockStorage } from './block-storage.js'
 import { create, load } from 'ipld-hashmap'
 import { sha256 as blockHasher } from 'multiformats/hashes/sha2'
 import * as blockCodec from '@ipld/dag-cbor'

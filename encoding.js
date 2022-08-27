@@ -110,6 +110,18 @@ class Encoder {
         return this.writeUInt(offset)
     }
 
+    skipBytes(length) {
+        this.cursor += length
+    }
+
+    skipUInt() {
+        this.skipBytes(4)
+    }
+
+    skipRef() {
+        this.skipUInt()
+    }
+
 }
 
 class Decoder {
@@ -197,8 +209,12 @@ class NodesEncoder extends Encoder {
     writeNode(node) {
         this.writeOffset(node.offset.offsetValue())
         this.writeLabel(node.label)
-        this.writeRef(node.nextRlshp.offsetValue())
-        this.writeRef(node.nextProp.offsetValue())
+        if (node.nextRlshp)
+            this.writeRef(node.nextRlshp.offsetValue())
+        else this.skipRef()
+        if (node.nextProp)
+            this.writeRef(node.nextProp.offsetValue())
+        else this.skipRef()
         this.writeControlNode()
     }
 
@@ -249,10 +265,18 @@ class RlshpsEncoder extends Encoder {
         this.writeLabel(rlshp.label)
         this.writeRef(rlshp.firstNode.offsetValue())
         this.writeRef(rlshp.secondNode.offsetValue())
-        this.writeRef(rlshp.firstPrevRel.offsetValue())
-        this.writeRef(rlshp.firstNextRel.offsetValue())
-        this.writeRef(rlshp.secondPrevRel.offsetValue())
-        this.writeRef(rlshp.secondNextRel.offsetValue())
+        if (rlshp.firstPrevRel)
+            this.writeRef(rlshp.firstPrevRel.offsetValue())
+        else this.skipRef()
+        if (rlshp.firstNextRel)
+            this.writeRef(rlshp.firstNextRel.offsetValue())
+        else this.skipRef()
+        if (rlshp.secondPrevRel)
+            this.writeRef(rlshp.secondPrevRel.offsetValue())
+        else this.skipRef()
+        if (rlshp.secondNextRel)
+            this.writeRef(rlshp.secondNextRel.offsetValue())
+        else this.skipRef()
         this.writeControlRlshp()
     }
 
@@ -313,7 +337,9 @@ class PropsEncoder extends Encoder {
         this.writeOffset(prop.offset.offsetValue())
         this.writeKey(prop.key)
         this.writeValue(prop.value)
-        this.writeRef(prop.nextProp.offsetValue())
+        if (prop.nextProp)
+            this.writeRef(prop.nextProp.offsetValue())
+        else this.skipRef()
         this.writeControlProp()
     }
 
