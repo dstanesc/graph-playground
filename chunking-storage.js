@@ -59,22 +59,25 @@ const chunkingStorage = async (history, blockStore, requestOffset) => {
     }
 
     const nodeGet = async offset => {
+        const offsetInt = parseInt(offset)
         const get = nodeStore.get
-        const resultByteArray = await cs.read(offset, offset + offsetIncrements.node, { nodesRoot: CID.parse(nodesRoot), nodesIndex, get, decode })
+        const resultByteArray = await cs.read(offsetInt, offsetInt + offsetIncrements.node, { root: CID.parse(nodesRoot), index: nodesIndex, get, decode })
         const nodesResult = new NodesDecoder(resultByteArray).read()
         return nodesResult[0]
     }
 
     const rlshpGet = async offset => {
+        const offsetInt = parseInt(offset)
         const get = rlshpStore.get
-        const resultByteArray = await cs.read(offset, offset + offsetIncrements.rlshp, { rlshpsRoot: CID.parse(rlshpsRoot), rlshpsIndex, get, decode })
+        const resultByteArray = await cs.read(offsetInt, offsetInt + offsetIncrements.rlshp, { root: CID.parse(rlshpsRoot), index: rlshpsIndex, get, decode })
         const rlshpsResult = new RlshpsDecoder(resultByteArray).read()
         return rlshpsResult[0]
     }
 
     const propGet = async offset => {
+        const offsetInt = parseInt(offset)
         const get = propStore.get
-        const resultByteArray = await cs.read(offset, offset + offsetIncrements.prop, { propsRoot: CID.parse(propsRoot), propsIndex, get, decode })
+        const resultByteArray = await cs.read(offsetInt, offsetInt + offsetIncrements.prop, { root: CID.parse(propsRoot), index: propsIndex, get, decode })
         const propsResult = new PropsDecoder(resultByteArray).read()
         return propsResult[0]
     }

@@ -28,6 +28,18 @@ const graphToChunky = async () => {
     s1.showBlocks(blockResult1)
     console.log(`Blocks size1 ${(size1 / (1024)).toFixed(2)} KB`)
     console.log(`Blocks count1 ${count1}`)
+    const gw2 = g.writer()
+    await updateGraph(g, gw2)
+    const blockResult2 = await gw2.commit()
+    s1.showBlocks(blockResult2)
+    const size2 = s1.size(blockResult2)
+    const count2 = s1.count(blockResult2)
+    console.log(`Blocks size2 ${((size1 + size2) / (1024)).toFixed(2)} KB`)
+    console.log(`Blocks count2 ${count1 + count2}`)
+    console.log(`Block size increase ${(((size2) / (size1 + size2)) * 100).toFixed(2)} %`)
+    console.log(`Block count increase ${(((count2) / (count1 + count2)) * 100).toFixed(2)} %`)
+    console.log('---')
+    await h.show()
 }
 
 {
