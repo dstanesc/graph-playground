@@ -116,6 +116,29 @@ eg. ['surname', 'firstname', 'motivation']
 
 `SELECT ['surname', 'firstname', 'motivation']`
 
+__Chunky__ (WIP, home grown `chunking-storage`, w/ fastcdc chunker)
+- fastcdc, minSize = 1024 * 64
+
+```
+---Found---
+{
+  firstname: 'Benjamin',
+  surname: 'List',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+---Found---
+{
+  firstname: 'David',
+  surname: 'MacMillan',
+  motivation: '"for the development of asymmetric organocatalysis"'
+}
+Query duration 2 ms
+// fastcdc config
+const minSize = 1024 * 64
+const avgSize = minSize * 2
+const maxSize = avgSize * 2
+```
+
 __Prolly__ 
 - bf: 3
 
@@ -181,7 +204,9 @@ Query duration 8 ms
 `SELECT ['surname', 'firstname', 'motivation']`
 
 __Chunky__ (WIP, home grown `chunking-storage`, w/ fastcdc chunker)
+- fastcdc, minSize = 1024 * 64
 
+```
 ---Found---
 {
   firstname: 'Emil',
@@ -190,12 +215,11 @@ __Chunky__ (WIP, home grown `chunking-storage`, w/ fastcdc chunker)
 }
 Query duration 4 ms
 
-//fastcdc config
+// fastcdc config
 const minSize = 1024 * 64
 const avgSize = minSize * 2
 const maxSize = avgSize * 2
----
-
+```
 
 __Prolly__ 
 - bf: 3
