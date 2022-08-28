@@ -1,11 +1,15 @@
 import bounds from 'binary-search-bounds'
 
-const INDEX_CONTROL_BYTE = 0b100100
+const INDEX_CONTROL_FLAG = 0b100100
 
-const writeControlByte = (buffer, pos, controlByte) => {
-    const controlBytes = new Uint8Array(4)
-    controlBytes[0] = controlByte
-    buffer.set(controlBytes, pos)
+const writeControlFlag = (buffer, pos, controlFlag) => {
+    let flag = 0
+    flag |= controlFlag
+    return writeUInt(buffer, pos, flag)
+}
+
+const readControlFlag = (buffer, pos) => {
+    return readUInt(buffer, pos)
 }
 
 const writeUInt = (buffer, pos, value) => {
@@ -68,7 +72,7 @@ const chunkStore = async () => {
             pos += blockSize
         }
 
-        writeControlByte(indexBuffer, 0, INDEX_CONTROL_BYTE) // index control
+        writeControlFlag(indexBuffer, 0, INDEX_CONTROL_FLAG) // index control
         writeUInt(indexBuffer, 4, indexSize)  // index size
         writeUInt(indexBuffer, 8, byteArraySize)  // byte array size
 
@@ -143,10 +147,9 @@ const chunkStore = async () => {
     }
 
     const readIndex = async (root, get, decode) => {
-        //const indexBuffer = await blockStore.get(root)
         const indexBuffer = await get(root)
-        const controlByte = readControlByte(indexBuffer, 0)
-        if (controlByte & INDEX_CONTROL_BYTE == 0) throw new Error(`This byte array is not an index`)
+        const controlFlag = readControlFlag(indexBuffer, 0)
+        if (controlFlag & INDEX_CONTROL_FLAG == 0) throw new Error(`This byte array is not an index`)
         const indexSize = readUInt(indexBuffer, 4)
         const byteArraySize = readUInt(indexBuffer, 8)
         const blockSize = 44
