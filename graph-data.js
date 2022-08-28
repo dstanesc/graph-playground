@@ -71,7 +71,7 @@ const updateGraph = async (g, gw) => {
     await k11.addProp(gw, 'surname', 'Glück')
     // const n9 = await g.getNode(9)
     
-    const n9 = await g.getNode(468) //FIXME will fail on non -chunky backends
+    const n9 = await g.getNode(9 * 132) //FIXME will fail on non -chunky backends
     const r20 = await n9.addRlshp(gw, "category", k10)
     const r21 = await k10.addRlshp(gw, "laureates", k11)
     return gw

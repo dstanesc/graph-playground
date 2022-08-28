@@ -21,9 +21,11 @@ const PROP_CONTROL_FLAG = 0x100
 
 class Encoder {
 
-    constructor(size) {
+    constructor(size, encode, put) {
         this.buffer = new Uint8Array(size)
         this.cursor = 0
+        this.encode = encode
+        this.put = put
         console.log(`Encode buffer size = ${this.buffer.byteLength}`)
     }
 
@@ -42,6 +44,19 @@ class Encoder {
     //     if (this.offset + numBytes > this.buffer.byteLength)
     //         allocateSpace()
     // }
+
+    /*
+     * String, fixed size 256 bytes 
+     */
+    writeFixedLengthString256(value) {  // 256 + 4
+        const bytes = stringToUtf8(value)
+        if (bytes.length > 256) throw new Error(`String too large - ${bytes.length}, max allowed 256 bytes`)
+        const length = bytes.length
+        this.writeUInt(length)
+        const fixedSizeBuffer = new Uint8Array(256)
+        fixedSizeBuffer.set(bytes, 0)
+        return this.writeBytes(fixedSizeBuffer)
+    }
 
     /*
      * String, fixed size 64 bytes 
@@ -155,15 +170,17 @@ class Encoder {
     }
 
     skipRef() {
-        this.skipBytes(72)
+        this.skipBytes(44)
     }
 
 }
 
 class Decoder {
-    constructor(buffer) {
+    constructor(buffer, decode, get) {
         this.buffer = buffer
         this.cursor = 0
+        this.decode = decode
+        this.get = get
     }
 
     readByte() {
@@ -178,6 +195,15 @@ class Decoder {
         const bytes = this.buffer.subarray(start, this.cursor)
         //console.log(`Reading bytes ${bytes} from offset ${start}, moving cursor to ${this.cursor}`)
         return bytes
+    }
+
+    /*
+     * Fixed size 256 bytes
+     */
+    readFixedSizeString256(stringSize) {
+        const stringBytes = this.readBytes(stringSize)
+        this.cursor += 256 - stringSize
+        return utf8ToString(stringBytes)
     }
 
     /*
@@ -280,7 +306,7 @@ class NodesEncoder extends Encoder {
         return this.writeUInt(flags |= NODE_CONTROL_FLAG)
     }
 
-    writeNode(node) { // 128
+    writeNode(node) { // NODE_SIZE_BYTES
         this.writeOffset(node.offset.offsetValue()) // 4
         this.writeLabel(node.label) // 32 + 4
         if (node.nextRlshp)
@@ -304,9 +330,9 @@ class NodesDecoder extends Decoder {
         return this.readUInt()
     }
 
-    readNode() { // 132
+    readNode() { // NODE_SIZE_BYTES
         const offset = this.readOffset()
-        const label = this.readLabel() 
+        const label = this.readLabel()
         const nextRlshp = this.readRef()
         const nextProp = this.readRef()
         if (this.readControlNode() & NODE_CONTROL_FLAG === 0)
@@ -340,7 +366,7 @@ class RlshpsEncoder extends Encoder {
         return this.writeUInt(flags |= RLSHP_CONTROL_FLAG)
     }
 
-    writeRlshp(rlshp) { // 308
+    writeRlshp(rlshp) { // RLSHP_SIZE_BYTES
         this.writeOffset(rlshp.offset.offsetValue()) // 4
         this.writeLabel(rlshp.label) //  // 32 + 4
         this.writeRef(rlshp.firstNode.offsetValue()) // 44
@@ -372,7 +398,7 @@ class RlshpsDecoder extends Decoder {
         return this.readUInt()
     }
 
-    readRlshp() { //RLSHP_SIZE_BYTES
+    readRlshp() { // RLSHP_SIZE_BYTES
         const offset = this.readOffset()
         const label = this.readLabel()
         const firstNode = this.readRef()
@@ -397,12 +423,12 @@ class RlshpsDecoder extends Decoder {
     }
 }
 
-const PROP_SIZE_BYTES = 152
+const PROP_SIZE_BYTES = 124
 
 class PropsEncoder extends Encoder {
 
-    constructor(props) {
-        super(props.length * PROP_SIZE_BYTES)
+    constructor(props, encode, put) {
+        super(props.length * PROP_SIZE_BYTES, encode, put)
         this.props = props
     }
 
@@ -410,8 +436,13 @@ class PropsEncoder extends Encoder {
         return this.writeFixedLengthString32(key)
     }
 
-    writeValue(cid) {
-        return this.writeFixedLengthString64(cid)
+    async writeValue(value) {
+        const bytes = new TextEncoder().encode(value) //FIXME elaborate formats
+        const cid = await this.encode(bytes)
+        if (cid.bytes.byteLength != 36) throw new Error('Prop value encoding should produce exactly 36 bytes')
+        const block = { cid, bytes }
+        this.put(block)
+        return this.writeBytes(cid.bytes)
     }
 
     writeControlProp() {
@@ -419,18 +450,20 @@ class PropsEncoder extends Encoder {
         return this.writeUInt(flags |= PROP_CONTROL_FLAG)
     }
 
-    writeProp(prop) { // PROP_SIZE_BYTES
+    async writeProp(prop) { // PROP_SIZE_BYTES
         this.writeOffset(prop.offset.offsetValue()) // 4
         this.writeKey(prop.key)   // 32 + 4
-        this.writeValue(prop.value) // 64
+        await this.writeValue(prop.value) // 36 
         if (prop.nextProp)
             this.writeRef(prop.nextProp.offsetValue()) // 44
         else this.skipRef()
         return this.writeControlProp() // 4
     }
 
-    write() {
-        this.props.forEach(prop => this.writeProp(prop))
+    async write() {
+        for (const prop of this.props) {
+            await this.writeProp(prop)
+        }
         return this;
     }
 }
@@ -438,26 +471,31 @@ class PropsEncoder extends Encoder {
 
 class PropsDecoder extends Decoder {
 
+    constructor(buffer, decode, get) {
+        super(buffer, decode, get)
+    }
+
     readKey() {
         const keySize = this.readUInt()
         console.log(`Reading key size ${keySize}`);
         return this.readFixedSizeString32(keySize)
     }
 
-    readValue() {
-        const cidSize = this.readUInt()
-        console.log(`Reading value size ${cidSize}`);
-        return this.readFixedSizeString64(cidSize)
+    async readValue() {
+        const cidBytes = this.readBytes(36)
+        const valueCid = this.decode(cidBytes)
+        const valueBytes = await this.get(valueCid)
+        return new TextDecoder().decode(valueBytes) //FIXME elaborate formats
     }
 
     readControlProp() {
         return this.readUInt()
     }
 
-    readProp() { // PROP_SIZE_BYTES
+    async readProp() { // PROP_SIZE_BYTES
         const offset = this.readOffset()
         const key = this.readKey()
-        const cid = this.readValue() // FIXME elaborate elsewhere how to load cid content
+        const cid = await this.readValue()
         const nextProp = this.readRef()
         if (this.readControlProp() & PROP_CONTROL_FLAG === 0)
             throw new Error(`The buffer is not holding a prop at this offset ${this.cursor - PROP_SIZE_BYTES}`)
@@ -465,16 +503,17 @@ class PropsDecoder extends Decoder {
         return new Prop(offset, key, cid, nextProp)
     }
 
-    read() {
+    async read() {
         if (this.buffer.byteLength % PROP_SIZE_BYTES !== 0) throw new Error("Invalid prop byte array")
         const size = Math.trunc(this.buffer.byteLength / PROP_SIZE_BYTES)
         const props = []
         for (let i = 0; i < size; i++) {
-            props.push(this.readProp())
+            props.push(await this.readProp())
         }
         return props
     }
 }
 
+const offsetIncrements = { node: NODE_SIZE_BYTES, rlshp: RLSHP_SIZE_BYTES, prop: PROP_SIZE_BYTES }
 
-export { NodesEncoder, NodesDecoder, RlshpsEncoder, RlshpsDecoder, PropsEncoder, PropsDecoder }
+export { NodesEncoder, NodesDecoder, RlshpsEncoder, RlshpsDecoder, PropsEncoder, PropsDecoder, offsetIncrements }

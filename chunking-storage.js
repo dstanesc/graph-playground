@@ -2,12 +2,12 @@ import { Node, Rlshp, Prop } from './graph.js'
 import { chunkStore } from './chunk-store.js'
 import { codec } from './codec.js'
 import { chunkers } from './chunkers.js'
-import { NodesEncoder, NodesDecoder, RlshpsEncoder, RlshpsDecoder, PropsEncoder, PropsDecoder } from './encoding.js'
+import { NodesEncoder, NodesDecoder, RlshpsEncoder, RlshpsDecoder, PropsEncoder, PropsDecoder, offsetIncrements } from './encoding.js'
 import { CID } from 'multiformats'
 
 const { encode, decode } = codec()
 
-const minSize = 512 * 1
+const minSize = 1024 * 32
 const avgSize = minSize * 2
 const maxSize = avgSize * 2
 
@@ -16,13 +16,13 @@ const chunker = chunkers('fastcdc', { minSize, avgSize, maxSize })
 const cs = await chunkStore()
 
 
-const chunkingStorage = async (history, blockStore, requestOffset) => {
+const chunkingStorage = async (history, blockStore) => {
 
     const nodeStore = blockStore
     const rlshpStore = blockStore
     const propStore = blockStore
 
-    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = requestOffset !== undefined ? await history.navigate(requestOffset) : await history.last()
+    let { offset, nodesRoot, rlshpsRoot, propsRoot, nodeOffset, rlshpOffset, propOffset, prevOffset } = await history.last()
 
     let nodesIndex
     let rlshpsIndex
@@ -50,7 +50,8 @@ const chunkingStorage = async (history, blockStore, requestOffset) => {
 
     const propsCreate = async (props) => {
         const propsArray = Array.from(props.values())
-        const propsByteArray = new PropsEncoder(propsArray).write().content()
+        const propsEncoder = await new PropsEncoder(propsArray, encode, propStore.put).write()
+        const propsByteArray = propsEncoder.content()
         const { root, index, blocks } = await cs.create({ buf: propsByteArray, chunker, encode })
         blocks.forEach(block => propStore.put(block))
         propsRoot = root.toString()
@@ -78,7 +79,7 @@ const chunkingStorage = async (history, blockStore, requestOffset) => {
         const offsetInt = parseInt(offset)
         const get = propStore.get
         const resultByteArray = await cs.read(offsetInt, offsetInt + offsetIncrements.prop, { root: CID.parse(propsRoot), index: propsIndex, get, decode })
-        const propsResult = new PropsDecoder(resultByteArray).read()
+        const propsResult = await new PropsDecoder(resultByteArray, decode, get).read()
         return propsResult[0]
     }
 
@@ -171,8 +172,6 @@ const chunkingStorage = async (history, blockStore, requestOffset) => {
         console.log('---')
         console.log(`Total stored size ${(sum / (1024)).toFixed(2)} KB`);
     }
-
-    const offsetIncrements = { node: 52, rlshp: 68, prop: 116 }
 
     return { nodesRootGet, rlshpsRootGet, propsRootGet, nodeOffsetGet, rlshpOffsetGet, propOffsetGet, storageCommit, nodeGet, rlshpGet, propGet, size, count, showBlocks, offsetIncrements }
 
