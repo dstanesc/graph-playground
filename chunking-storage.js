@@ -7,7 +7,7 @@ import { CID } from 'multiformats'
 
 const { encode, decode } = codec()
 
-const minSize = 1024 * 32
+const minSize = 1024 * 64
 const avgSize = minSize * 2
 const maxSize = avgSize * 2
 

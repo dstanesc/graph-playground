@@ -180,6 +180,23 @@ Query duration 8 ms
 
 `SELECT ['surname', 'firstname', 'motivation']`
 
+__Chunky__ (WIP, home grown `chunking-storage`, w/ fastcdc chunker)
+
+---Found---
+{
+  firstname: 'Emil',
+  surname: 'von Behring',
+  motivation: '"for his work on serum therapy, especially its application against diphtheria, by which he has opened a new road in the domain of medical science and thereby placed in the hands of the physician a victorious weapon against illness and deaths"'
+}
+Query duration 4 ms
+
+//fastcdc config
+const minSize = 1024 * 64
+const avgSize = minSize * 2
+const maxSize = avgSize * 2
+---
+
+
 __Prolly__ 
 - bf: 3
 
