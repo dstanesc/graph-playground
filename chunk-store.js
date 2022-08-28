@@ -58,7 +58,7 @@ const chunkStore = async () => {
             blocks.push(block)
             startOffsets.set(lastOffset, chunkCid)
             //endOffsets.set(lastOffset, offset - 1)
-            if (chunkCid.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
+            if (chunkCid.byteLength !== 36) throw new Error(`The cid has unexpected size ${chunkCid.byteLength}`)
             // TODO store chunk length vs. absolute offset 
             // Propagate choice to the rust library
             writeUInt(indexBuffer, pos, lastOffset)
@@ -73,9 +73,9 @@ const chunkStore = async () => {
         writeUInt(indexBuffer, 8, byteArraySize)  // byte array size
 
         const root = await encode(indexBuffer)
-        if (root.byteLength !== 36) throw new Error(`The CID has unexpected size ${chunkCid.byteLength}`)
+        if (root.byteLength !== 36) throw new Error(`The cid has unexpected size ${chunkCid.byteLength}`)
 
-        // TODO chunk large indices
+        // TODO chunk large indices, fixed size
         const rootBlock = { cid: root, bytes: indexBuffer }
         blocks.push(rootBlock)
 
